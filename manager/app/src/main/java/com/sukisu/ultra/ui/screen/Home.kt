@@ -132,6 +132,7 @@ fun HomeScreen(navigator: DestinationsNavigator) {
     var isHideVersion by rememberSaveable { mutableStateOf(false) }
     var isHideOtherInfo by rememberSaveable { mutableStateOf(false) }
     var isHideSusfsStatus by rememberSaveable { mutableStateOf(false) }
+    var isHideLinkCard by rememberSaveable { mutableStateOf(false) }
 
     // 从 SharedPreferences 加载简洁模式状态
     LaunchedEffect(Unit) {
@@ -146,10 +147,13 @@ fun HomeScreen(navigator: DestinationsNavigator) {
 
         isHideSusfsStatus = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
             .getBoolean("is_hide_susfs_status", false)
+
+        isHideLinkCard = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
+            .getBoolean("is_hide_link_card", false)
     }
 
     val kernelVersion = getKernelVersion()
-    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
 
     val isManager = Natives.becomeManager(ksuApp.packageName)
     val deviceModel = getDeviceModel()
@@ -279,16 +283,16 @@ fun HomeScreen(navigator: DestinationsNavigator) {
             InfoCard()
 
             if (!isSimpleMode) {
-                ContributionCard()
-                DonateCard()
-                LearnMoreCard()
+             if (!isHideLinkCard) {
+                 ContributionCard()
+                 DonateCard()
+                 LearnMoreCard()
+                }
             }
-
             Spacer(Modifier.height(16.dp))
         }
     }
 
-    // 防抖逻辑
     LaunchedEffect(scrollState) {
         snapshotFlow { scrollState.isScrollInProgress }
             .debounce(debounceTime)
@@ -297,7 +301,6 @@ fun HomeScreen(navigator: DestinationsNavigator) {
                     val currentTime = System.currentTimeMillis()
                     if (currentTime - lastScrollTime > debounceTime) {
                         lastScrollTime = currentTime
-                        // 在这里可以添加滚动时的逻辑
                     }
                 }
             }
@@ -387,7 +390,7 @@ private fun TopBar(
         },
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = cardColor.copy(alpha = cardAlpha),
-            scrolledContainerColor = cardColor.copy(alpha = 1f)
+            scrolledContainerColor = cardColor.copy(alpha = cardAlpha)
         ),
         actions = {
             if (kernelVersion.isGKI()) {

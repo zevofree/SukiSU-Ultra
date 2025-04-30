@@ -194,6 +194,8 @@
     <string name="hide_other_info_summary">ホームページ上のスーパーユーザー、モジュール、KPM モジュールの数に関する情報を非表示にします</string>
     <string name="hide_susfs_status">SuSFS ステータスを非表示にする</string>
     <string name="hide_susfs_status_summary">ホームページ上の SuSFS ステータス情報を非表示にします</string>
+    <string name="hide_link_card">リンクカードのステータスを隠す</string>
+    <string name="hide_link_card_summary">ホームページのリンクカード情報を隠す</string>
     <string name="theme_mode">テーマ</string>
     <string name="theme_follow_system">システムに従う</string>
     <string name="theme_light">ライト</string>

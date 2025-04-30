@@ -49,7 +49,7 @@ import com.sukisu.ultra.ui.viewmodel.SuperUserViewModel
 fun SuperUserScreen(navigator: DestinationsNavigator) {
     val viewModel = viewModel<SuperUserViewModel>()
     val scope = rememberCoroutineScope()
-    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
     val listState = rememberLazyListState()
     val context = LocalContext.current
     val snackBarHostState = remember { SnackbarHostState() }

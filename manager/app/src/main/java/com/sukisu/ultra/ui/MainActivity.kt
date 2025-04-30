@@ -102,24 +102,11 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier.padding(innerPadding),
                             navGraph = NavGraphs.root as NavHostGraphSpec,
                             navController = navController,
-                            defaultTransitions = remember {
-                                object : NavHostAnimatedDestinationStyle() {
-                                    override val enterTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = {
-                                        fadeIn(animationSpec = tween(300)) +
-                                                slideIntoContainer(
-                                                    towards = AnimatedContentTransitionScope.SlideDirection.Up,
-                                                    animationSpec = tween(300)
-                                                )
-                                    }
-
-                                    override val exitTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = {
-                                        fadeOut(animationSpec = tween(300)) +
-                                                slideOutOfContainer(
-                                                    towards = AnimatedContentTransitionScope.SlideDirection.Down,
-                                                    animationSpec = tween(300)
-                                                )
-                                    }
-                                }
+                            defaultTransitions = object : NavHostAnimatedDestinationStyle() {
+                                override val enterTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition
+                                    get() = { fadeIn(animationSpec = tween(340)) }
+                                override val exitTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition
+                                    get() = { fadeOut(animationSpec = tween(340)) }
                             }
                         )
                     }
