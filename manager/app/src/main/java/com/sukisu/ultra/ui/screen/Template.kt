@@ -33,6 +33,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarColors
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -61,6 +62,7 @@ import com.ramcosta.composedestinations.result.getOr
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import com.sukisu.ultra.R
+import com.sukisu.ultra.ui.theme.CardConfig
 import com.sukisu.ultra.ui.theme.ThemeConfig
 import com.sukisu.ultra.ui.viewmodel.TemplateViewModel
 
@@ -98,6 +100,9 @@ fun AppProfileTemplateScreen(
         }
     }
 
+    val cardColorUse = MaterialTheme.colorScheme.surfaceVariant
+    val cardAlpha = CardConfig.cardAlpha
+
     Scaffold(
         topBar = {
             val context = LocalContext.current
@@ -109,6 +114,10 @@ fun AppProfileTemplateScreen(
             }
             TopBar(
                 onBack = dropUnlessResumed { navigator.popBackStack() },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = cardColorUse.copy(alpha = cardAlpha),
+                    scrolledContainerColor = cardColorUse.copy(alpha = cardAlpha)
+                ),
                 onSync = {
                     scope.launch { viewModel.fetchTemplates(true) }
                 },
@@ -226,12 +235,20 @@ private fun TopBar(
     onSync: () -> Unit = {},
     onImport: () -> Unit = {},
     onExport: () -> Unit = {},
+    colors: TopAppBarColors,
     scrollBehavior: TopAppBarScrollBehavior? = null
 ) {
+    val cardColor = MaterialTheme.colorScheme.surfaceVariant
+    val cardAlpha = CardConfig.cardAlpha
+
     TopAppBar(
         title = {
             Text(stringResource(R.string.settings_profile_template))
         },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = cardColor.copy(alpha = cardAlpha),
+            scrolledContainerColor = cardColor.copy(alpha = cardAlpha)
+        ),
         navigationIcon = {
             IconButton(
                 onClick = onBack
