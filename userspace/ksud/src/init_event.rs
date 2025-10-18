@@ -87,25 +87,6 @@ pub fn on_post_data_fs() -> Result<()> {
         warn!("KPM: Failed to load KPM modules: {}", e);
     }
 
-    let tmpfs_path = find_tmp_path();
-    // for compatibility
-    let no_mount = Path::new(NO_TMPFS_PATH).exists() || Path::new(NO_MOUNT_PATH).exists();
-
-    // mount temp dir
-    if !no_mount {
-        if let Err(e) = mount(
-            KSU_MOUNT_SOURCE,
-            &tmpfs_path,
-            "tmpfs",
-            MountFlags::empty(),
-            "",
-        ) {
-            warn!("do temp dir mount failed: {}", e);
-        }
-    } else {
-        info!("no tmpfs requested");
-    }
-
     // exec modules post-fs-data scripts
     // TODO: Add timeout
     if let Err(e) = crate::module::exec_stage_script("post-fs-data", true) {
@@ -117,9 +98,10 @@ pub fn on_post_data_fs() -> Result<()> {
         warn!("load system.prop failed: {e}");
     }
 
+    let tmpfs_path = find_tmp_path();
     // mount module systemlessly by magic mount
     #[cfg(target_os = "android")]
-    if !no_mount {
+    if !Path::new(NO_MOUNT_PATH).exists() {
         if let Err(e) = crate::magic_mount::magic_mount(&tmpfs_path) {
             warn!("do systemless mount failed: {e}");
         }
@@ -149,16 +131,6 @@ pub fn on_post_data_fs() -> Result<()> {
 
     run_stage("post-mount", true);
 
-    Ok(())
-}
-
-#[cfg(target_os = "android")]
-pub fn mount_modules_systemlessly() -> Result<()> {
-    crate::magic_mount::magic_mount(&find_tmp_path())
-}
-
-#[cfg(not(target_os = "android"))]
-pub fn mount_modules_systemlessly() -> Result<()> {
     Ok(())
 }
 
