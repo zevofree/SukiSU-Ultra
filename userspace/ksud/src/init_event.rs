@@ -2,14 +2,15 @@
 use crate::kpm;
 use crate::{
     assets, defs,
-    defs::{NO_MOUNT_PATH},
-    utils::find_tmp_path,
+    defs::NO_MOUNT_PATH,
     ksucalls,
     module::{handle_updated_modules, prune_modules},
     restorecon, uid_scanner, utils,
+    utils::find_tmp_path,
 };
 use anyhow::{Context, Result};
 use log::{info, warn};
+use rustix::mount::{MountFlags, mount};
 use std::path::Path;
 
 #[cfg(target_os = "android")]
