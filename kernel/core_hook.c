@@ -1007,6 +1007,9 @@ int ksu_handle_setuid(struct cred *new, const struct cred *old)
 	try_umount("/system_ext", true, 0);
 	try_umount("/data/adb/modules", false, MNT_DETACH);
 
+	// try umount ksu temp path
+	try_umount("/debug_ramdisk", false, MNT_DETACH);
+
 	return 0;
 }
 
