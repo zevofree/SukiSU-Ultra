@@ -141,6 +141,11 @@ ifeq ($(shell grep -A1 "^int vfs_getattr" $(srctree)/fs/stat.c | grep -q "query_
 ccflags-y += -DKSU_HAS_NEW_VFS_GETATTR
 endif
 
+# Function proc_ops check
+ifeq ($(shell grep -q "struct proc_ops " $(srctree)/include/linux/proc_fs.h; echo $$?),0)
+ccflags-y += -DKSU_COMPAT_HAS_PROC_OPS
+endif
+
 ccflags-y += -Wno-implicit-function-declaration -Wno-strict-prototypes -Wno-int-conversion -Wno-gcc-compat
 ccflags-y += -Wno-declaration-after-statement -Wno-unused-function
 
