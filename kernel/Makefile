@@ -3,8 +3,10 @@ kernelsu-objs += allowlist.o
 kernelsu-objs += dynamic_manager.o
 kernelsu-objs += apk_sign.o
 kernelsu-objs += sucompat.o
+kernelsu-objs += pkg_observer.o
 kernelsu-objs += throne_tracker.o
 kernelsu-objs += core_hook.o
+kernelsu-objs += supercalls.o
 kernelsu-objs += ksud.o
 kernelsu-objs += embed_ksud.o
 kernelsu-objs += kernel_compat.o
@@ -132,6 +134,11 @@ ifeq ($(CONFIG_KPM), y)
 $(info -- KPM is enabled)
 else
 $(info -- KPM is disabled)
+endif
+
+# Check new vfs_getattr()
+ifeq ($(shell grep -A1 "^int vfs_getattr" $(srctree)/fs/stat.c | grep -q "query_flags" ; echo $$?),0)
+ccflags-y += -DKSU_HAS_NEW_VFS_GETATTR
 endif
 
 ccflags-y += -Wno-implicit-function-declaration -Wno-strict-prototypes -Wno-int-conversion -Wno-gcc-compat

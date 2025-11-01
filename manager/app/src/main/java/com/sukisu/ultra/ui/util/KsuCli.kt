@@ -21,6 +21,7 @@ import com.sukisu.ultra.Natives
 import com.sukisu.ultra.ksuApp
 import org.json.JSONArray
 import java.io.File
+import java.util.concurrent.CountDownLatch
 
 
 /**
@@ -34,7 +35,7 @@ private fun getKsuDaemonPath(): String {
 }
 
 object KsuCli {
-    val SHELL: Shell = createRootShell()
+    var SHELL: Shell = createRootShell()
     val GLOBAL_MNT_SHELL: Shell = createRootShell(true)
 }
 
@@ -578,11 +579,10 @@ fun getUidScannerDaemonPath(): String {
     return ksuApp.applicationInfo.nativeLibraryDir + File.separator + "libuid_scanner.so"
 }
 
+private const val targetPath = "/data/adb/uid_scanner"
 fun ensureUidScannerExecutable(): Boolean {
     val shell = getRootShell()
     val uidScannerPath = getUidScannerDaemonPath()
-    val targetPath = "/data/adb/uid_scanner"
-
     if (!ShellUtils.fastCmdResult(shell, "test -f $targetPath")) {
         val copyResult = ShellUtils.fastCmdResult(shell, "cp $uidScannerPath $targetPath")
         if (!copyResult) {
@@ -593,7 +593,6 @@ fun ensureUidScannerExecutable(): Boolean {
     val result = ShellUtils.fastCmdResult(shell, "chmod 755 $targetPath")
     return result
 }
-private const val targetPath = "/data/adb/uid_scanner"
 
 fun setUidAutoScan(enabled: Boolean): Boolean {
     val shell = getRootShell()
@@ -632,5 +631,32 @@ fun getUidMultiUserScan(): Boolean {
         result.toInt() == 1
     } catch (_: NumberFormatException) {
         false
+    }
+}
+
+fun cleanRuntimeEnvironment(): Boolean {
+    val shell = getRootShell()
+    return try {
+        try {
+            ShellUtils.fastCmd(shell, "/data/adb/uid_scanner stop")
+        } catch (_: Exception) {
+        }
+        ShellUtils.fastCmdResult(shell, "rm -rf /data/misc/user_uid")
+        ShellUtils.fastCmdResult(shell, "rm -rf /data/adb/uid_scanner")
+        ShellUtils.fastCmdResult(shell, "rm -rf /data/adb/ksu/bin/user_uid")
+        ShellUtils.fastCmdResult(shell, "rm -rf /data/adb/service.d/uid_scanner.sh")
+        Natives.clearUidScannerEnvironment()
+        true
+    } catch (_: Exception) {
+        false
+    }
+}
+
+fun readUidScannerFile(): Boolean {
+    val shell = getRootShell()
+    return try {
+        ShellUtils.fastCmd(shell, "cat /data/adb/ksu/.uid_scanner").trim() == "1"
+    } catch (_: Exception) {
+         false
     }
 }

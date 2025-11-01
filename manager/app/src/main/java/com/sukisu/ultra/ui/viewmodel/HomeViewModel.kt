@@ -121,18 +121,12 @@ class HomeViewModel : ViewModel() {
             try {
                 val kernelVersion = getKernelVersion()
                 val isManager = try {
-                    Natives.becomeManager(ksuApp.packageName ?: "com.sukisu.ultra")
+                    Natives.isManager
                 } catch (_: Exception) {
                     false
                 }
 
-                val ksuVersion = if (isManager) {
-                    try {
-                        Natives.version
-                    } catch (_: Exception) {
-                        null
-                    }
-                } else null
+                val ksuVersion = if (isManager) Natives.version else null
 
                 val fullVersion = try {
                     Natives.getFullVersion()
@@ -163,13 +157,7 @@ class HomeViewModel : ViewModel() {
                 }
 
                 val lkmMode = ksuVersion?.let {
-                    try {
-                        if (it >= Natives.MINIMAL_SUPPORTED_KERNEL_LKM && kernelVersion.isGKI()) {
-                            Natives.isLkmMode
-                        } else null
-                    } catch (_: Exception) {
-                        null
-                    }
+                    if (kernelVersion.isGKI()) Natives.isLkmMode else null
                 }
 
                 val isRootAvailable = try {
@@ -346,7 +334,7 @@ class HomeViewModel : ViewModel() {
             try {
                 // 检查KSU状态是否发生变化
                 val currentKsuVersion = try {
-                    if (Natives.becomeManager(ksuApp.packageName ?: "com.sukisu.ultra")) {
+                    if (Natives.isManager) {
                         Natives.version
                     } else null
                 } catch (_: Exception) {
