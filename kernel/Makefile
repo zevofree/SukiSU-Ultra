@@ -31,6 +31,10 @@ obj-$(CONFIG_KSU_TRACEPOINT_HOOK) += ksu_trace_export.o
 
 obj-$(CONFIG_KPM) += kpm/
 
+ifeq ($(CONFIG_KSU),m)
+ccflags-y += -DKSU_MODULE
+endif
+
 
 REPO_OWNER := SukiSU-Ultra
 REPO_NAME := SukiSU-Ultra

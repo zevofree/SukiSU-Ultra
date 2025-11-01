@@ -4,7 +4,11 @@
 #include <linux/types.h>
 #include <linux/version.h>
 
-#define __SULOG_GATE        1
+#ifdef KSU_MODULE
+#define __SULOG_GATE 0
+#else
+#define __SULOG_GATE 1
+#endif
 
 #if __SULOG_GATE
 extern struct timezone sys_tz;
