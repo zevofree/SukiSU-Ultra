@@ -211,6 +211,9 @@ jobs:
 
       - name: Build Kernel/LKM
         working-directory: android-kernel
+        env:
+          CI_KSU_VERSION: ${{ env.KSU_VERSION }}
+          CI_KSU_VERSION_FULL: ${{ env.KSU_VERSION_FULL }}
         run: |
           if [ ! -z ${{ vars.EXPECTED_SIZE }} ] && [ ! -z ${{ vars.EXPECTED_HASH }} ]; then
             export KSU_EXPECTED_SIZE=${{ vars.EXPECTED_SIZE }}
