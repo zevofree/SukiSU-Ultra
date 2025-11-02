@@ -577,6 +577,7 @@ int ksu_handle_setuid(struct cred *new, const struct cred *old)
 
     kuid_t new_uid = new->uid;
     kuid_t old_uid = old->uid;
+    pr_info("handle_setuid from %d to %d\n", old_uid.val, new_uid.val);
 
     if (0 != old_uid.val) {
         // old process is not root, ignore it.
@@ -584,7 +585,7 @@ int ksu_handle_setuid(struct cred *new, const struct cred *old)
     }
 
     if (!is_appuid(new_uid) || is_unsupported_uid(new_uid.val)) {
-        // pr_info("handle setuid ignore non application or isolated uid: %d\n", new_uid.val);
+        pr_info("handle setuid ignore non application or isolated uid: %d\n", new_uid.val);
         return 0;
     }
 
@@ -693,8 +694,8 @@ static struct kprobe reboot_kp = {
     .pre_handler = reboot_handler_pre,
 };
 
-// 2. security_task_fix_setuid hook for handling setuid
-static int security_task_fix_setuid_handler_pre(struct kprobe *p, struct pt_regs *regs)
+// 2. cap_task_fix_setuid hook for handling setuid
+static int cap_task_fix_setuid_handler_pre(struct kprobe *p, struct pt_regs *regs)
 {
     struct cred *new = (struct cred *)PT_REGS_PARM1(regs);
     const struct cred *old = (const struct cred *)PT_REGS_PARM2(regs);
@@ -704,9 +705,9 @@ static int security_task_fix_setuid_handler_pre(struct kprobe *p, struct pt_regs
     return 0;
 }
 
-static struct kprobe security_task_fix_setuid_kp = {
-    .symbol_name = "security_task_fix_setuid",
-    .pre_handler = security_task_fix_setuid_handler_pre,
+static struct kprobe cap_task_fix_setuid_kp = {
+    .symbol_name = "cap_task_fix_setuid",
+    .pre_handler = cap_task_fix_setuid_handler_pre,
 };
 
 // 3. prctl hook for handling ksu prctl commands
@@ -810,12 +811,12 @@ __maybe_unused int ksu_kprobe_init(void)
         pr_info("reboot kprobe registered successfully\n");
     }
 
-    rc = register_kprobe(&security_task_fix_setuid_kp);
+    rc = register_kprobe(&cap_task_fix_setuid_kp);
     if (rc) {
-        pr_err("security_task_fix_setuid kprobe failed: %d\n", rc);
+        pr_err("cap_task_fix_setuid kprobe failed: %d\n", rc);
         unregister_kprobe(&reboot_kp);
     } else {
-        pr_info("security_task_fix_setuid kprobe registered successfully\n");
+        pr_info("cap_task_fix_setuid_kp kprobe registered successfully\n");
     }
     
 
@@ -859,7 +860,7 @@ __maybe_unused int ksu_kprobe_init(void)
 __maybe_unused int ksu_kprobe_exit(void)
 {
     unregister_kprobe(&reboot_kp);
-    unregister_kprobe(&security_task_fix_setuid_kp);
+    unregister_kprobe(&cap_task_fix_setuid_kp);
     unregister_kprobe(&prctl_kp);
     unregister_kprobe(&ksu_inode_permission_kp);
     unregister_kprobe(&ksu_bprm_check_kp);
