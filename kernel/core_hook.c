@@ -31,6 +31,7 @@
 #include "allowlist.h"
 #include "arch.h"
 #include "core_hook.h"
+#include "feature.h"
 #include "klog.h" // IWYU pragma: keep
 #include "ksu.h"
 #include "ksud.h"
@@ -76,6 +77,29 @@ static struct workqueue_struct *ksu_workqueue;
 struct ksu_umount_work {
     struct work_struct work;
     struct mnt_namespace *mnt_ns;
+};
+
+static bool ksu_kernel_umount_enabled = true;
+
+static int kernel_umount_feature_get(u64 *value)
+{
+    *value = ksu_kernel_umount_enabled ? 1 : 0;
+    return 0;
+}
+
+static int kernel_umount_feature_set(u64 value)
+{
+    bool enable = value != 0;
+    ksu_kernel_umount_enabled = enable;
+    pr_info("kernel_umount: set to %d\n", enable);
+    return 0;
+}
+
+static const struct ksu_feature_handler kernel_umount_handler = {
+    .feature_id = KSU_FEATURE_KERNEL_UMOUNT,
+    .name = "kernel_umount",
+    .get_handler = kernel_umount_feature_get,
+    .set_handler = kernel_umount_feature_set,
 };
 
 static inline bool is_allow_su()
@@ -539,8 +563,8 @@ static void do_umount_work(struct work_struct *work)
     // try umount ksu temp path
     try_umount("/debug_ramdisk", false, MNT_DETACH);
 
+    // fixme: dec refcount
     current->nsproxy->mnt_ns = old_mnt_ns;
-    put_mnt_ns(umount_work->mnt_ns);
 
     kfree(umount_work);
 }
@@ -588,6 +612,10 @@ int ksu_handle_setuid(struct cred *new, const struct cred *old)
         return 0;
     }
 
+    if (!ksu_kernel_umount_enabled) {
+        return 0;
+    }
+
     if (!ksu_uid_should_umount(new_uid.val)) {
         return 0;
     } else {
@@ -622,8 +650,8 @@ int ksu_handle_setuid(struct cred *new, const struct cred *old)
         return 0;
     }
 
+    // fixme: inc refcount
     umount_work->mnt_ns = current->nsproxy->mnt_ns;
-    get_mnt_ns(umount_work->mnt_ns);
 
     INIT_WORK(&umount_work->work, do_umount_work);
 
@@ -668,9 +696,8 @@ static struct kprobe reboot_kp = {
 // 2. security_task_fix_setuid hook for handling setuid
 static int security_task_fix_setuid_handler_pre(struct kprobe *p, struct pt_regs *regs)
 {
-    struct pt_regs *real_regs = PT_REAL_REGS(regs);
-    struct cred *new = (struct cred *)PT_REGS_PARM1(real_regs);
-    const struct cred *old = (const struct cred *)PT_REGS_PARM2(real_regs);
+    struct cred *new = (struct cred *)PT_REGS_PARM1(regs);
+    const struct cred *old = (const struct cred *)PT_REGS_PARM2(regs);
 
     ksu_handle_setuid(new, old);
 
@@ -844,6 +871,10 @@ __maybe_unused int ksu_kprobe_exit(void)
 
 void __init ksu_core_init(void)
 {
+    if (ksu_register_feature_handler(&kernel_umount_handler)) {
+        pr_err("Failed to register kernel_umount feature handler\n");
+    }
+
     ksu_workqueue = alloc_workqueue("ksu_umount", WQ_UNBOUND, 0);
     if (!ksu_workqueue) {
         pr_err("Failed to create ksu workqueue\n");
