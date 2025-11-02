@@ -234,28 +234,28 @@ struct ksu_enable_uid_scanner_cmd {
 };
 
 // IOCTL command definitions
-#define KSU_IOCTL_GRANT_ROOT _IO('K', 1)
-#define KSU_IOCTL_GET_INFO _IOR('K', 2, struct ksu_get_info_cmd)
-#define KSU_IOCTL_REPORT_EVENT _IOW('K', 3, struct ksu_report_event_cmd)
-#define KSU_IOCTL_SET_SEPOLICY _IOWR('K', 4, struct ksu_set_sepolicy_cmd)
-#define KSU_IOCTL_CHECK_SAFEMODE _IOR('K', 5, struct ksu_check_safemode_cmd)
-#define KSU_IOCTL_GET_ALLOW_LIST _IOWR('K', 6, struct ksu_get_allow_list_cmd)
-#define KSU_IOCTL_GET_DENY_LIST _IOWR('K', 7, struct ksu_get_allow_list_cmd)
-#define KSU_IOCTL_UID_GRANTED_ROOT _IOWR('K', 8, struct ksu_uid_granted_root_cmd)
-#define KSU_IOCTL_UID_SHOULD_UMOUNT _IOWR('K', 9, struct ksu_uid_should_umount_cmd)
-#define KSU_IOCTL_GET_MANAGER_UID _IOR('K', 10, struct ksu_get_manager_uid_cmd)
-#define KSU_IOCTL_GET_APP_PROFILE _IOWR('K', 11, struct ksu_get_app_profile_cmd)
-#define KSU_IOCTL_SET_APP_PROFILE _IOW('K', 12, struct ksu_set_app_profile_cmd)
-#define KSU_IOCTL_GET_FEATURE _IOWR('K', 13, struct ksu_get_feature_cmd)
-#define KSU_IOCTL_SET_FEATURE _IOW('K', 14, struct ksu_set_feature_cmd)
+#define KSU_IOCTL_GRANT_ROOT _IOC(_IOC_NONE, 'K', 1, 0)
+#define KSU_IOCTL_GET_INFO _IOC(_IOC_READ, 'K', 2, 0)
+#define KSU_IOCTL_REPORT_EVENT _IOC(_IOC_WRITE, 'K', 3, 0)
+#define KSU_IOCTL_SET_SEPOLICY _IOC(_IOC_READ|_IOC_WRITE, 'K', 4, 0)
+#define KSU_IOCTL_CHECK_SAFEMODE _IOC(_IOC_READ, 'K', 5, 0)
+#define KSU_IOCTL_GET_ALLOW_LIST _IOC(_IOC_READ|_IOC_WRITE, 'K', 6, 0)
+#define KSU_IOCTL_GET_DENY_LIST _IOC(_IOC_READ|_IOC_WRITE, 'K', 7, 0)
+#define KSU_IOCTL_UID_GRANTED_ROOT _IOC(_IOC_READ|_IOC_WRITE, 'K', 8, 0)
+#define KSU_IOCTL_UID_SHOULD_UMOUNT _IOC(_IOC_READ|_IOC_WRITE, 'K', 9, 0)
+#define KSU_IOCTL_GET_MANAGER_UID _IOC(_IOC_READ, 'K', 10, 0)
+#define KSU_IOCTL_GET_APP_PROFILE _IOC(_IOC_READ|_IOC_WRITE, 'K', 11, 0)
+#define KSU_IOCTL_SET_APP_PROFILE _IOC(_IOC_WRITE, 'K', 12, 0)
+#define KSU_IOCTL_GET_FEATURE _IOC(_IOC_READ|_IOC_WRITE, 'K', 13, 0)
+#define KSU_IOCTL_SET_FEATURE _IOC(_IOC_WRITE, 'K', 14, 0)
 
 // Other IOCTL command definitions
-#define KSU_IOCTL_GET_FULL_VERSION _IOR('K', 100, struct ksu_get_full_version_cmd)
-#define KSU_IOCTL_HOOK_TYPE _IOR('K', 101, struct ksu_hook_type_cmd)
-#define KSU_IOCTL_ENABLE_KPM _IOR('K', 102, struct ksu_enable_kpm_cmd)
-#define KSU_IOCTL_DYNAMIC_MANAGER _IOWR('K', 103, struct ksu_dynamic_manager_cmd)
-#define KSU_IOCTL_GET_MANAGERS _IOWR('K', 104, struct ksu_get_managers_cmd)
-#define KSU_IOCTL_ENABLE_UID_SCANNER _IOWR('K', 105, struct ksu_enable_uid_scanner_cmd)
+#define KSU_IOCTL_GET_FULL_VERSION _IOC(_IOC_READ, 'K', 100, 0)
+#define KSU_IOCTL_HOOK_TYPE _IOC(_IOC_READ, 'K', 101, 0)
+#define KSU_IOCTL_ENABLE_KPM _IOC(_IOC_READ, 'K', 102, 0)
+#define KSU_IOCTL_DYNAMIC_MANAGER _IOC(_IOC_READ|_IOC_WRITE, 'K', 103, 0)
+#define KSU_IOCTL_GET_MANAGERS _IOC(_IOC_READ|_IOC_WRITE, 'K', 104, 0)
+#define KSU_IOCTL_ENABLE_UID_SCANNER _IOC(_IOC_READ|_IOC_WRITE, 'K', 105, 0)
 
 bool get_allow_list(struct ksu_get_allow_list_cmd*);
 
