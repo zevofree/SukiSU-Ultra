@@ -54,13 +54,13 @@ jobs:
         CI_KSU_VERSION: ${{ env.KSU_VERSION }}
         CI_KSU_VERSION_FULL: ${{ env.KSU_VERSION_FULL }}
       run: |
-        git config --global --add safe.directory /__w/KernelSU/KernelSU
+        git config --global --add safe.directory /__w/SukiSU-Ultra/SukiSU-Ultra
 
         cd kernel
 
         echo "=== Building kernelsu.ko for KMI: ${{ inputs.kmi }} ==="
 
-        CONFIG_KSU=m CONFIG_KSU_KPROBES_HOOKS=y make
+        CONFIG_KSU=m CONFIG_KPROBES=y CONFIG_KSU_KPROBES_HOOK=y CONFIG_KSU_MANUAL_SU=y make
         
         echo "=== Build completed ==="
 
