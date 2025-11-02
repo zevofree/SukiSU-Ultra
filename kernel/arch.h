@@ -18,18 +18,12 @@
 #define __PT_SP_REG sp
 #define __PT_IP_REG pc
 
-#define PRCTL_SYMBOL "__arm64_sys_prctl"
 #define REBOOT_SYMBOL "__arm64_sys_reboot"
+#define PRCTL_SYMBOL "__arm64_sys_prctl"
 #define SYS_READ_SYMBOL "__arm64_sys_read"
 #define SYS_NEWFSTATAT_SYMBOL "__arm64_sys_newfstatat"
 #define SYS_FACCESSAT_SYMBOL "__arm64_sys_faccessat"
 #define SYS_EXECVE_SYMBOL "__arm64_sys_execve"
-/*LSM HOOK*/
-#define SECURITY_TASK_FIX_SETUID_SYMBOL "security_task_fix_setuid"
-#define PRCTL_SYMBOL "__arm64_sys_prctl"
-#define INODE_PERMISSION_SYMBOL "security_inode_permission"
-#define BPRM_CHECK_SECURITY_SYMBOL "security_bprm_check"
-#define TASK_ALLOC_SYMBOL "security_task_alloc"
 
 #elif defined(__x86_64__)
 
@@ -46,18 +40,12 @@
 #define __PT_RC_REG ax
 #define __PT_SP_REG sp
 #define __PT_IP_REG ip
-#define PRCTL_SYMBOL "__x64_sys_prctl"
 #define REBOOT_SYMBOL "__x64_sys_reboot"
+#define PRCTL_SYMBOL "__x64_sys_prctl"
 #define SYS_READ_SYMBOL "__x64_sys_read"
 #define SYS_NEWFSTATAT_SYMBOL "__x64_sys_newfstatat"
 #define SYS_FACCESSAT_SYMBOL "__x64_sys_faccessat"
 #define SYS_EXECVE_SYMBOL "__x64_sys_execve"
-/*LSM HOOK*/
-#define SECURITY_TASK_FIX_SETUID_SYMBOL "security_task_fix_setuid"
-#define PRCTL_SYMBOL "__x64_sys_prctl"
-#define INODE_PERMISSION_SYMBOL "security_inode_permission"
-#define BPRM_CHECK_SECURITY_SYMBOL "security_bprm_check"
-#define TASK_ALLOC_SYMBOL "security_task_alloc"
 
 #else
 #error "Unsupported arch"
