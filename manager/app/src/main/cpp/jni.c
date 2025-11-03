@@ -8,11 +8,12 @@
 #include <linux/capability.h>
 
 NativeBridgeNP(getVersion, jint) {
-	uint32_t version = get_version();
-	if (version > INT32_MAX) {
-		LogDebug("Version overflow: %u", version);
-	}
-	return (jint)version;
+    uint32_t version = get_version();
+    if (version > 0) {
+        return (jint)version;
+    }
+    // try legacy method as fallback
+    return legacy_get_version();
 }
 
 // get VERSION FULL
