@@ -152,6 +152,7 @@ fun SettingScreen(navigator: DestinationsNavigator) {
                             var isSuDisabled by rememberSaveable {
                                 mutableStateOf(!Natives.isSuEnabled())
                             }
+
                             SwitchItem(
                                 icon = Icons.Filled.RemoveModerator,
                                 title = stringResource(R.string.settings_disable_su),
@@ -166,21 +167,26 @@ fun SettingScreen(navigator: DestinationsNavigator) {
                             )
                         }
 
-                        var isKernelUmountDisabled by rememberSaveable {
-                            mutableStateOf(!Natives.isKernelUmountEnabled())
-                        }
-                        SwitchItem(
-                            icon = Icons.Rounded.FolderDelete,
-                            title = stringResource(id = R.string.settings_disable_kernel_umount),
-                            summary = stringResource(id = R.string.settings_disable_kernel_umount_summary),
-                            checked = isKernelUmountDisabled,
-                            onCheckedChange = { checked: Boolean ->
-                                val shouldEnable = !checked
-                                if (Natives.setKernelUmountEnabled(shouldEnable)) {
-                                    isKernelUmountDisabled = !shouldEnable
-                                }
+                        // 禁用内核卸载开关
+                        if (Natives.version >= Natives.MINIMAL_NEW_IOCTL_KERNEL) {
+                            var isKernelUmountDisabled by rememberSaveable {
+                                mutableStateOf(!Natives.isKernelUmountEnabled())
                             }
-                        )
+
+                            SwitchItem(
+                                icon = Icons.Rounded.FolderDelete,
+                                title = stringResource(id = R.string.settings_disable_kernel_umount),
+                                summary = stringResource(id = R.string.settings_disable_kernel_umount_summary),
+                                checked = isKernelUmountDisabled,
+                                onCheckedChange = { checked: Boolean ->
+                                    val shouldEnable = !checked
+                                    if (Natives.setKernelUmountEnabled(shouldEnable)) {
+                                        isKernelUmountDisabled = !shouldEnable
+                                    }
+                                }
+                            )
+                        }
+
 
                         // 强制签名验证开关
                         var forceSignatureVerification by rememberSaveable {

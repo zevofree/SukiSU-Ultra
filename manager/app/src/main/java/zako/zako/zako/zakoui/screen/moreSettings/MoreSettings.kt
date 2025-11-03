@@ -357,7 +357,7 @@ private fun AdvancedSettings(
         SusFSSettings(state = state, handlers = handlers)
 
         // 动态管理器设置
-        if (Natives.version >= Natives.MINIMAL_SUPPORTED_DYNAMIC_MANAGER) {
+        if (Natives.version >= Natives.MINIMAL_SUPPORTED_DYNAMIC_MANAGER && Natives.version >= Natives.MINIMAL_NEW_IOCTL_KERNEL) {
             SettingItem(
                 icon = Icons.Filled.Security,
                 title = stringResource(R.string.dynamic_manager_title),

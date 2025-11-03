@@ -23,13 +23,15 @@ object Natives {
     const val MINIMAL_SUPPORTED_SU_COMPAT = 12040
     const val KERNEL_SU_DOMAIN = "u:r:su:s0"
 
-     const val MINIMAL_SUPPORTED_KERNEL_FULL = "v3.1.8"
+    const val MINIMAL_SUPPORTED_KERNEL_FULL = "v3.1.8"
 
     const val MINIMAL_SUPPORTED_KPM = 12800
 
     const val MINIMAL_SUPPORTED_DYNAMIC_MANAGER = 13215
 
     const val MINIMAL_SUPPORTED_UID_SCANNER = 13347
+
+    const val MINIMAL_NEW_IOCTL_KERNEL = 13490
 
     const val ROOT_UID = 0
     const val ROOT_GID = 0

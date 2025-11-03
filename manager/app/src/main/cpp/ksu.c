@@ -214,7 +214,7 @@ bool is_kernel_umount_enabled() {
     }
     return value != 0;
 }
-// 1. 获取完整版本名称
+
 void get_full_version(char* buff) {
 	struct ksu_get_full_version_cmd cmd = {0};
 	if (ksuctl(KSU_IOCTL_GET_FULL_VERSION, &cmd) == 0) {
@@ -225,7 +225,6 @@ void get_full_version(char* buff) {
 	}
 }
 
-// 2. 获取KPM启用状态
 bool is_KPM_enable(void) {
     struct ksu_enable_kpm_cmd cmd = {};
     if (ksuctl(KSU_IOCTL_ENABLE_KPM, &cmd) == 0 && cmd.enabled) {
@@ -234,7 +233,6 @@ bool is_KPM_enable(void) {
     return legacy_is_KPM_enable();
 }
 
-// 3. 获取钩子类型
 void get_hook_type(char *buff) {
     struct ksu_hook_type_cmd cmd = {0};
     if (ksuctl(KSU_IOCTL_HOOK_TYPE, &cmd) == 0) {
