@@ -12,40 +12,6 @@
 #include <sys/prctl.h>
 #include <sys/syscall.h>
 
-#define KERNEL_SU_OPTION 0xDEADBEEF
-
-#define CMD_GRANT_ROOT 0
-
-#define CMD_BECOME_MANAGER 1
-#define CMD_GET_VERSION 2
-#define CMD_ALLOW_SU 3
-#define CMD_DENY_SU 4
-#define CMD_GET_SU_LIST 5
-#define CMD_GET_DENY_LIST 6
-#define CMD_CHECK_SAFEMODE 9
-
-#define CMD_GET_APP_PROFILE 10
-#define CMD_SET_APP_PROFILE 11
-
-#define CMD_IS_UID_GRANTED_ROOT 12
-#define CMD_IS_UID_SHOULD_UMOUNT 13
-#define CMD_IS_SU_ENABLED 14
-#define CMD_ENABLE_SU 15
-
-#define CMD_GET_VERSION_FULL 0xC0FFEE1A
-
-#define CMD_ENABLE_KPM 100
-#define CMD_HOOK_TYPE 101
-#define CMD_DYNAMIC_MANAGER 103
-#define CMD_GET_MANAGERS 104
-#define CMD_ENABLE_UID_SCANNER 105
-
-static inline bool ksuctl_prctl(int cmd, void* arg1, void* arg2) {
-    int32_t result = 0;
-    int32_t rtn = prctl(KERNEL_SU_OPTION, cmd, arg1, arg2, &result);
-    return result == KERNEL_SU_OPTION && rtn == -1;
-}
-
 #define KSU_FULL_VERSION_STRING 255
 
 uint32_t get_version();
@@ -59,7 +25,6 @@ bool is_lkm_mode();
 bool is_manager();
 
 void get_full_version(char* buff);
-void legacy_get_full_version(char* buff);
 
 #define KSU_APP_PROFILE_VER 2
 #define KSU_MAX_PACKAGE_NAME 256
@@ -296,11 +261,30 @@ struct ksu_enable_uid_scanner_cmd {
 
 bool get_allow_list(struct ksu_get_allow_list_cmd *);
 
+// Legacy Compatible
 struct ksu_version_info legacy_get_info();
 
 struct ksu_version_info {
     int32_t version;
     int32_t flags;
 };
+
+bool legacy_get_allow_list(int *uids, int *size);
+bool legacy_is_safe_mode();
+bool legacy_uid_should_umount(int uid);
+bool legacy_set_app_profile(const struct app_profile* profile);
+bool legacy_get_app_profile(char* key, struct app_profile* profile);
+bool legacy_set_su_enabled(bool enabled);
+bool legacy_is_su_enabled();
+bool legacy_is_KPM_enable();
+bool legacy_get_hook_type(char* hook_type, size_t size);
+void legacy_get_full_version(char* buff);
+bool legacy_set_dynamic_manager(unsigned int size, const char* hash);
+bool legacy_get_dynamic_manager(struct dynamic_manager_user_config* config);
+bool legacy_clear_dynamic_manager();
+bool legacy_get_managers_list(struct manager_list_info* info);
+bool legacy_is_uid_scanner_enabled();
+bool legacy_set_uid_scanner_enabled(bool enabled);
+bool legacy_clear_uid_scanner_environment();
 
 #endif //KERNELSU_KSU_H

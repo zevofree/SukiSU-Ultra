@@ -90,22 +90,30 @@ uint32_t get_version() {
 	return info.version;
 }
 
-struct ksu_version_info legacy_get_info()
-{
-    int32_t version = -1;
-    int32_t flags = 0;
-    ksuctl_prctl(CMD_GET_VERSION, &version, &flags);
-    return (struct ksu_version_info){version, flags};
-}
-
 bool get_allow_list(struct ksu_get_allow_list_cmd *cmd) {
-	return ksuctl(KSU_IOCTL_GET_ALLOW_LIST, cmd) == 0;
+    if (ksuctl(KSU_IOCTL_GET_ALLOW_LIST, cmd) == 0) {
+        return true;
+    }
+
+    // fallback to legacy
+    int size = 0;
+    int uids[1024];
+    if (legacy_get_allow_list(uids, &size)) {
+        cmd->count = size;
+        memcpy(cmd->uids, uids, sizeof(int) * size);
+        return true;
+    }
+
+    return false;
 }
 
 bool is_safe_mode() {
-	struct ksu_check_safemode_cmd cmd = {};
-	ksuctl(KSU_IOCTL_CHECK_SAFEMODE, &cmd);
-	return cmd.in_safe_mode;
+    struct ksu_check_safemode_cmd cmd = {};
+    if (ksuctl(KSU_IOCTL_CHECK_SAFEMODE, &cmd) == 0) {
+        return cmd.in_safe_mode;
+    }
+    // fallback
+    return legacy_is_safe_mode();
 }
 
 bool is_lkm_mode() {
@@ -113,6 +121,7 @@ bool is_lkm_mode() {
     if (info.version > 0) {
         return (info.flags & 0x1) != 0;
     }
+    // Legacy Compatible
     return (legacy_get_info().flags & 0x1) != 0;
 }
 
@@ -121,46 +130,55 @@ bool is_manager() {
     if (info.version > 0) {
         return (info.flags & 0x2) != 0;
     }
+    // Legacy Compatible
     return legacy_get_info().version;
 }
 
 bool uid_should_umount(int uid) {
-	struct ksu_uid_should_umount_cmd cmd = {};
-	cmd.uid = uid;
-	ksuctl(KSU_IOCTL_UID_SHOULD_UMOUNT, &cmd);
-	return cmd.should_umount;
+    struct ksu_uid_should_umount_cmd cmd = {};
+    cmd.uid = uid;
+    if (ksuctl(KSU_IOCTL_UID_SHOULD_UMOUNT, &cmd) == 0) {
+        return cmd.should_umount;
+    }
+    return legacy_uid_should_umount(uid);
 }
 
 bool set_app_profile(const struct app_profile *profile) {
-	struct ksu_set_app_profile_cmd cmd = {};
-	cmd.profile = *profile;
-	return ksuctl(KSU_IOCTL_SET_APP_PROFILE, &cmd) == 0;
+    struct ksu_set_app_profile_cmd cmd = {};
+    cmd.profile = *profile;
+    if (ksuctl(KSU_IOCTL_SET_APP_PROFILE, &cmd) == 0) {
+        return true;
+    }
+    return legacy_set_app_profile(profile);
 }
 
 int get_app_profile(struct app_profile *profile) {
-	struct ksu_get_app_profile_cmd cmd = {.profile = *profile};
-	int ret = ksuctl(KSU_IOCTL_GET_APP_PROFILE, &cmd);
-	*profile = cmd.profile;
-	return ret;
+    struct ksu_get_app_profile_cmd cmd = {.profile = *profile};
+    int ret = ksuctl(KSU_IOCTL_GET_APP_PROFILE, &cmd);
+    if (ret == 0) {
+        *profile = cmd.profile;
+        return 0;
+    }
+    return legacy_get_app_profile(profile->key, profile) ? 0 : -1;
 }
 
 bool set_su_enabled(bool enabled) {
     struct ksu_set_feature_cmd cmd = {};
     cmd.feature_id = KSU_FEATURE_SU_COMPAT;
     cmd.value = enabled ? 1 : 0;
-    return ksuctl(KSU_IOCTL_SET_FEATURE, &cmd) == 0;
+    if (ksuctl(KSU_IOCTL_SET_FEATURE, &cmd) == 0) {
+        return true;
+    }
+    return legacy_set_su_enabled(enabled);
 }
 
 bool is_su_enabled() {
     struct ksu_get_feature_cmd cmd = {};
     cmd.feature_id = KSU_FEATURE_SU_COMPAT;
-    if (ksuctl(KSU_IOCTL_GET_FEATURE, &cmd) != 0) {
-        return false;
+    if (ksuctl(KSU_IOCTL_GET_FEATURE, &cmd) == 0 && cmd.supported) {
+        return cmd.value != 0;
     }
-    if (!cmd.supported) {
-        return false;
-    }
-    return cmd.value != 0;
+    return legacy_is_su_enabled();
 }
 
 static inline bool get_feature(uint32_t feature_id, uint64_t *out_value, bool *out_supported) {
@@ -196,7 +214,7 @@ bool is_kernel_umount_enabled() {
     }
     return value != 0;
 }
-
+// 1. 获取完整版本名称
 void get_full_version(char* buff) {
 	struct ksu_get_full_version_cmd cmd = {0};
 	if (ksuctl(KSU_IOCTL_GET_FULL_VERSION, &cmd) == 0) {
@@ -207,25 +225,24 @@ void get_full_version(char* buff) {
 	}
 }
 
-void legacy_get_full_version(char* buff) {
-    ksuctl_prctl(CMD_GET_VERSION_FULL, buff, NULL);
+// 2. 获取KPM启用状态
+bool is_KPM_enable(void) {
+    struct ksu_enable_kpm_cmd cmd = {};
+    if (ksuctl(KSU_IOCTL_ENABLE_KPM, &cmd) == 0 && cmd.enabled) {
+        return true;
+    }
+    return legacy_is_KPM_enable();
 }
 
-bool is_KPM_enable(void)
-{
-	struct ksu_enable_kpm_cmd cmd = {};
-	return ksuctl(KSU_IOCTL_ENABLE_KPM, &cmd) == 0 && cmd.enabled;
-}
-
-void get_hook_type(char *buff)
-{
-	struct ksu_hook_type_cmd cmd = {0};
-	if (ksuctl(KSU_IOCTL_HOOK_TYPE, &cmd) == 0) {
-		strncpy(buff, cmd.hook_type, 32 - 1);
-		buff[32 - 1] = '\0';
-	} else {
-		strcpy(buff, "Unknown");
-	}
+// 3. 获取钩子类型
+void get_hook_type(char *buff) {
+    struct ksu_hook_type_cmd cmd = {0};
+    if (ksuctl(KSU_IOCTL_HOOK_TYPE, &cmd) == 0) {
+        strncpy(buff, cmd.hook_type, 32 - 1);
+        buff[32 - 1] = '\0';
+    } else {
+        legacy_get_hook_type(buff, 32);
+    }
 }
 
 bool set_dynamic_manager(unsigned int size, const char *hash)
@@ -272,6 +289,34 @@ bool get_managers_list(struct manager_list_info *info)
 	return true;
 }
 
+bool is_uid_scanner_enabled(void)
+{
+	bool status = false;
+
+	struct ksu_enable_uid_scanner_cmd cmd = {
+			.operation  = UID_SCANNER_OP_GET_STATUS,
+			.status_ptr = (__u64)(uintptr_t)&status
+	};
+
+	return ksuctl(KSU_IOCTL_ENABLE_UID_SCANNER, &cmd) == 0 != 0 && status;
+}
+
+bool set_uid_scanner_enabled(bool enabled)
+{
+	struct ksu_enable_uid_scanner_cmd cmd = {
+			.operation = UID_SCANNER_OP_TOGGLE,
+			.enabled   = enabled
+	};
+	return ksuctl(KSU_IOCTL_ENABLE_UID_SCANNER, &cmd);
+}
+
+bool clear_uid_scanner_environment(void)
+{
+	struct ksu_enable_uid_scanner_cmd cmd = {
+			.operation = UID_SCANNER_OP_CLEAR_ENV
+	};
+	return ksuctl(KSU_IOCTL_ENABLE_UID_SCANNER, &cmd);
+}
 
 bool verify_module_signature(const char* input) {
 #if defined(__aarch64__) || defined(_M_ARM64) || defined(__arm__) || defined(_M_ARM)
@@ -328,33 +373,4 @@ bool verify_module_signature(const char* input) {
 	LogDebug("verify_module_signature: not supported on non-ARM architecture, path=%s", input ? input : "null");
 	return false;
 #endif
-}
-
-bool is_uid_scanner_enabled(void)
-{
-	bool status = false;
-
-	struct ksu_enable_uid_scanner_cmd cmd = {
-			.operation  = UID_SCANNER_OP_GET_STATUS,
-			.status_ptr = (__u64)(uintptr_t)&status
-	};
-
-	return ksuctl(KSU_IOCTL_ENABLE_UID_SCANNER, &cmd) == 0 != 0 && status;
-}
-
-bool set_uid_scanner_enabled(bool enabled)
-{
-	struct ksu_enable_uid_scanner_cmd cmd = {
-			.operation = UID_SCANNER_OP_TOGGLE,
-			.enabled   = enabled
-	};
-	return ksuctl(KSU_IOCTL_ENABLE_UID_SCANNER, &cmd);
-}
-
-bool clear_uid_scanner_environment(void)
-{
-	struct ksu_enable_uid_scanner_cmd cmd = {
-			.operation = UID_SCANNER_OP_CLEAR_ENV
-	};
-	return ksuctl(KSU_IOCTL_ENABLE_UID_SCANNER, &cmd);
 }
