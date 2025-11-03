@@ -5,7 +5,7 @@
 #include <linux/workqueue.h>
 
 #define KERNEL_SU_VERSION KSU_VERSION
-#define KERNEL_SU_OPTION 0xBADC0DE
+#define KERNEL_SU_OPTION 0xDEADBEEF
 
 extern bool ksu_uid_scanner_enabled;
 
