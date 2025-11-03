@@ -13,7 +13,7 @@ NativeBridgeNP(getVersion, jint) {
         return (jint)version;
     }
     // try legacy method as fallback
-    return legacy_get_version();
+    return legacy_get_info().version;
 }
 
 // get VERSION FULL

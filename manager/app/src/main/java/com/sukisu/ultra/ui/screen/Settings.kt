@@ -52,7 +52,6 @@ import com.sukisu.ultra.ui.theme.getCardElevation
 import com.sukisu.ultra.ui.util.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalDateTime

@@ -9,12 +9,46 @@
 #include <stdint.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
+#include <sys/prctl.h>
+#include <sys/syscall.h>
+
+#define KERNEL_SU_OPTION 0xDEADBEEF
+
+#define CMD_GRANT_ROOT 0
+
+#define CMD_BECOME_MANAGER 1
+#define CMD_GET_VERSION 2
+#define CMD_ALLOW_SU 3
+#define CMD_DENY_SU 4
+#define CMD_GET_SU_LIST 5
+#define CMD_GET_DENY_LIST 6
+#define CMD_CHECK_SAFEMODE 9
+
+#define CMD_GET_APP_PROFILE 10
+#define CMD_SET_APP_PROFILE 11
+
+#define CMD_IS_UID_GRANTED_ROOT 12
+#define CMD_IS_UID_SHOULD_UMOUNT 13
+#define CMD_IS_SU_ENABLED 14
+#define CMD_ENABLE_SU 15
+
+#define CMD_GET_VERSION_FULL 0xC0FFEE1A
+
+#define CMD_ENABLE_KPM 100
+#define CMD_HOOK_TYPE 101
+#define CMD_DYNAMIC_MANAGER 103
+#define CMD_GET_MANAGERS 104
+#define CMD_ENABLE_UID_SCANNER 105
+
+static inline bool ksuctl_prctl(int cmd, void* arg1, void* arg2) {
+    int32_t result = 0;
+    int32_t rtn = prctl(KERNEL_SU_OPTION, cmd, arg1, arg2, &result);
+    return result == KERNEL_SU_OPTION && rtn == -1;
+}
 
 #define KSU_FULL_VERSION_STRING 255
 
 uint32_t get_version();
-
-int legacy_get_version(void);
 
 bool uid_should_umount(int uid);
 
@@ -260,6 +294,13 @@ struct ksu_enable_uid_scanner_cmd {
 #define KSU_IOCTL_GET_MANAGERS _IOC(_IOC_READ|_IOC_WRITE, 'K', 104, 0)
 #define KSU_IOCTL_ENABLE_UID_SCANNER _IOC(_IOC_READ|_IOC_WRITE, 'K', 105, 0)
 
-bool get_allow_list(struct ksu_get_allow_list_cmd*);
+bool get_allow_list(struct ksu_get_allow_list_cmd *);
+
+struct ksu_version_info legacy_get_info();
+
+struct ksu_version_info {
+    int32_t version;
+    int32_t flags;
+};
 
 #endif //KERNELSU_KSU_H
