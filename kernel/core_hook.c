@@ -389,81 +389,6 @@ bool is_system_uid(void)
     return caller_uid <= 2000;
 }
 
-#if __SULOG_GATE
-static void sulog_prctl_cmd(uid_t uid, unsigned long cmd)
-{
-    const char *name = NULL;
-
-    switch (cmd) {
-
-#ifdef CONFIG_KSU_MANUAL_SU
-    case CMD_MANUAL_SU_REQUEST:             name = "prctl_manual_su_request"; break;
-#endif
-
-    default:                                name = "prctl_unknown"; break;
-    }
-
-    ksu_sulog_report_syscall(uid, NULL, name, NULL);
-}
-#endif
-
-int ksu_handle_prctl(int option, unsigned long arg2, unsigned long arg3,
-             unsigned long arg4, unsigned long arg5)
-{
-    // if success, we modify the arg5 as result!
-    __maybe_unused u32 *result = (u32 *)arg5;
-	__maybe_unused u32 reply_ok = KERNEL_SU_OPTION;
-
-    if (likely(ksu_is_current_proc_umounted()))
-        return 0; // prevent side channel attack in ksu side
-
-    if (KERNEL_SU_OPTION != option)
-        return 0;
-    
-#if __SULOG_GATE
-    sulog_prctl_cmd(current_uid().val, arg2);
-#endif
-
-    if (!is_system_uid()) {
-        return 0;
-    }
-
-#ifdef CONFIG_KSU_DEBUG
-    pr_info("option: 0x%x, cmd: %ld\n", option, arg2);
-#endif
-
-#ifdef CONFIG_KSU_MANUAL_SU
-    if (arg2 == CMD_MANUAL_SU_REQUEST) {
-        struct manual_su_request request;
-        int su_option = (int)arg3;
-        
-        if (copy_from_user(&request, (void __user *)arg4, sizeof(request))) {
-            pr_err("manual_su: failed to copy request from user\n");
-            return 0;
-        }
-
-        int ret = ksu_handle_manual_su_request(su_option, &request);
-
-        // Copy back result for token generation
-        if (ret == 0 && su_option == MANUAL_SU_OP_GENERATE_TOKEN) {
-            if (copy_to_user((void __user *)arg4, &request, sizeof(request))) {
-                pr_err("manual_su: failed to copy request back to user\n");
-                return 0;
-            }
-        }
-        
-        if (ret == 0) {
-            if (copy_to_user(result, &reply_ok, sizeof(reply_ok))) {
-                pr_err("manual_su: prctl reply error\n");
-            }
-        }
-        return 0;
-    }
-#endif
-
-    return 0;
-}
-
 static bool is_appuid(kuid_t uid)
 {
 #define PER_USER_RANGE 100000
@@ -723,26 +648,7 @@ static struct kprobe cap_task_fix_setuid_kp = {
     .pre_handler = cap_task_fix_setuid_handler_pre,
 };
 
-// 3. prctl hook for handling ksu prctl commands
-static int handler_pre(struct kprobe *p, struct pt_regs *regs)
-{
-    struct pt_regs *real_regs = PT_REAL_REGS(regs);
-    int option = (int)PT_REGS_PARM1(real_regs);
-    unsigned long arg2 = (unsigned long)PT_REGS_PARM2(real_regs);
-    unsigned long arg3 = (unsigned long)PT_REGS_PARM3(real_regs);
-    // PRCTL_SYMBOL is the arch-specificed one, which receive raw pt_regs from syscall
-    unsigned long arg4 = (unsigned long)PT_REGS_SYSCALL_PARM4(real_regs);
-    unsigned long arg5 = (unsigned long)PT_REGS_PARM5(real_regs);
-
-    return ksu_handle_prctl(option, arg2, arg3, arg4, arg5);
-}
-
-static struct kprobe prctl_kp = {
-    .symbol_name = PRCTL_SYMBOL,
-    .pre_handler = handler_pre,
-};
-
-// 4.inode_permission hook for handling devpts
+// 3.inode_permission hook for handling devpts
 static int ksu_inode_permission_handler_pre(struct kprobe *p, struct pt_regs *regs)
 {
     struct inode *inode = (struct inode *)PT_REGS_PARM1(regs);
@@ -761,7 +667,7 @@ static struct kprobe ksu_inode_permission_kp = {
 };
 
 
-// 5. bprm_check_security hook for handling ksud compatibility
+// 4. bprm_check_security hook for handling ksud compatibility
 static int ksu_bprm_check_handler_pre(struct kprobe *p, struct pt_regs *regs)
 {
     struct linux_binprm *bprm = (struct linux_binprm *)PT_REGS_PARM1(regs);
@@ -797,7 +703,7 @@ static struct kprobe ksu_bprm_check_kp = {
 };
 
 #ifdef CONFIG_KSU_MANUAL_SU
-// 6. task_alloc hook for handling manual su escalation
+// 5. task_alloc hook for handling manual su escalation
 static int ksu_task_alloc_handler_pre(struct kprobe *p, struct pt_regs *regs)
 {
     struct task_struct *task = (struct task_struct *)PT_REGS_PARM1(regs);
@@ -830,15 +736,6 @@ __maybe_unused int ksu_kprobe_init(void)
         unregister_kprobe(&reboot_kp);
     } else {
         pr_info("cap_task_fix_setuid_kp kprobe registered successfully\n");
-    }
-    
-
-    // Register prctl kprobe
-    rc = register_kprobe(&prctl_kp);
-    if (rc) {
-        pr_info("prctl kprobe failed: %d.\n", rc);
-    } else {
-        pr_info("prctl kprobe registered successfully.\n");
     }
 
     // Register inode_permission kprobe
@@ -874,7 +771,6 @@ __maybe_unused int ksu_kprobe_exit(void)
 {
     unregister_kprobe(&reboot_kp);
     unregister_kprobe(&cap_task_fix_setuid_kp);
-    unregister_kprobe(&prctl_kp);
     unregister_kprobe(&ksu_inode_permission_kp);
     unregister_kprobe(&ksu_bprm_check_kp);
 #ifdef CONFIG_KSU_MANUAL_SU
@@ -894,6 +790,9 @@ void __init ksu_core_init(void)
     if (ksu_register_feature_handler(&kernel_umount_handler)) {
         pr_err("Failed to register umount feature handler\n");
     }
+#ifdef CONFIG_KSU_MANUAL_SU
+    ksu_netlink_init();
+#endif
 }
 
 void ksu_core_exit(void)
@@ -908,4 +807,7 @@ void ksu_core_exit(void)
     ksu_kprobe_exit();
 #endif
     ksu_unregister_feature_handler(KSU_FEATURE_KERNEL_UMOUNT);
+#ifdef CONFIG_KSU_MANUAL_SU
+    ksu_netlink_exit();
+#endif
 }
