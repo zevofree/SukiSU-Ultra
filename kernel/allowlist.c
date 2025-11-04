@@ -15,6 +15,7 @@
 #include "ksu.h"
 #include "klog.h" // IWYU pragma: keep
 #include "selinux/selinux.h"
+#include "kernel_compat.h"
 #include "allowlist.h"
 #include "manager.h"
 
@@ -526,7 +527,7 @@ void ksu_allowlist_exit(void)
     mutex_unlock(&allowlist_mutex);
 }
 
-#ifdef __MANUAL_SU
+#ifdef CONFIG_KSU_MANUAL_SU
 bool ksu_temp_grant_root_once(uid_t uid)
 {
     struct app_profile profile = {
