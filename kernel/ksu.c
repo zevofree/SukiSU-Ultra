@@ -7,6 +7,7 @@
 
 #include "allowlist.h"
 #include "arch.h"
+#include "kernel_compat.h"
 #include "core_hook.h"
 #include "feature.h"
 #include "klog.h" // IWYU pragma: keep
@@ -56,7 +57,7 @@ int __init kernelsu_init(void)
     ksu_allowlist_init();
 
     ksu_throne_tracker_init();
-#ifdef CONFIG_KSU_KPROBES_HOOK
+#ifdef __KPROBES_HOOK
     ksu_sucompat_init();
     ksu_ksud_init();
 #else
@@ -85,7 +86,7 @@ void kernelsu_exit(void)
 
     destroy_workqueue(ksu_workqueue);
 
-#ifdef CONFIG_KSU_KPROBES_HOOK
+#ifdef __KPROBES_HOOK
     ksu_ksud_exit();
     ksu_sucompat_exit();
 #endif

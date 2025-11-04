@@ -6,6 +6,14 @@
 #include "ss/policydb.h"
 #include "linux/key.h"
 
+#if defined(CONFIG_KPROBES) && !(defined(CONFIG_KSU_TRACEPOINT_HOOK) || defined(CONFIG_KSU_MANUAL_HOOK))
+#define __KPROBES_HOOK 1
+#elif (defined(CONFIG_KSU_TRACEPOINT_HOOK) || defined(CONFIG_KSU_MANUAL_HOOK)) && !defined(CONFIG_KSU_KPROBES_HOOK)
+#define __KPROBES_HOOK 0
+#elif defined(CONFIG_KSU_KPROBES_HOOK)
+#define __KPROBES_HOOK 1
+#endif
+
 
 #if defined(CONFIG_ARM) || defined(CONFIG_ARM64)
 // arch/arm64/include/asm/barrier.h, adding dsb probably unneeded
