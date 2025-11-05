@@ -13,7 +13,6 @@ kernelsu-objs += embed_ksud.o
 kernelsu-objs += kernel_compat.o
 kernelsu-objs += throne_comm.o
 kernelsu-objs += sulog.o
-kernelsu-objs += ksu_netlink.o
 
 ifeq ($(CONFIG_KSU_MANUAL_SU), y)
 ccflags-y += -DCONFIG_KSU_MANUAL_SU
