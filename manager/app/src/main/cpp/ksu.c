@@ -131,7 +131,7 @@ bool is_manager() {
         return (info.flags & 0x2) != 0;
     }
     // Legacy Compatible
-    return legacy_get_info().version;
+    return legacy_get_info().version > 0;
 }
 
 bool uid_should_umount(int uid) {

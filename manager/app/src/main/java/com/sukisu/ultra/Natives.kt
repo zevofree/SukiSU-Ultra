@@ -189,7 +189,7 @@ object Natives {
     }
 
     fun requireNewKernel(): Boolean {
-        if (version < MINIMAL_SUPPORTED_KERNEL) return true
+        if (version != -1 && version < MINIMAL_SUPPORTED_KERNEL) return true
         return isVersionLessThan(getFullVersion(), MINIMAL_SUPPORTED_KERNEL_FULL)
     }
 
