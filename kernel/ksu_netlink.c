@@ -25,12 +25,7 @@ static bool always_allow(uid_t uid)
 
 static bool system_uid(uid_t uid)
 {
-    if (!current->mm || current->in_execve) {
-        return 0;
-    }
-    
-    uid_t caller_uid = current_uid().val;
-    return caller_uid <= 2000;
+    return uid <= 2000;
 }
 
 #ifdef CONFIG_KSU_MANUAL_SU
