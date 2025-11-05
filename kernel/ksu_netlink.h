@@ -15,17 +15,21 @@ struct ksu_netlink_hdr {
     int result;   // Result code (output)
 };
 
-struct ksu_netlink_manual_su {
+#ifdef CONFIG_KSU_MANUAL_SU
+struct netlink_manual_su {
     struct ksu_netlink_hdr hdr;
     int option;
     uid_t target_uid;
     pid_t target_pid;
     char token_buffer[33];
 };
+#endif
 
 union ksu_netlink_msg {
     struct ksu_netlink_hdr hdr;
-    struct ksu_netlink_manual_su manual_su;
+#ifdef CONFIG_KSU_MANUAL_SU
+    struct netlink_manual_su manual_su;
+#endif
 };
 
 typedef int (*ksu_netlink_handler_t)(struct sk_buff *skb, struct nlmsghdr *nlh, void *msg_data);
