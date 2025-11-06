@@ -148,24 +148,22 @@ fun SettingScreen(navigator: DestinationsNavigator) {
                         )
 
                         // SU 禁用开关
-                        if (Natives.version >= Natives.MINIMAL_SUPPORTED_SU_COMPAT) {
-                            var isSuDisabled by rememberSaveable {
-                                mutableStateOf(!Natives.isSuEnabled())
-                            }
-
-                            SwitchItem(
-                                icon = Icons.Filled.RemoveModerator,
-                                title = stringResource(R.string.settings_disable_su),
-                                summary = stringResource(R.string.settings_disable_su_summary),
-                                checked = isSuDisabled,
-                                onCheckedChange = { enabled ->
-                                    val shouldEnable = !enabled
-                                    if (Natives.setSuEnabled(shouldEnable)) {
-                                        isSuDisabled = enabled
-                                    }
-                                }
-                            )
+                        var isSuDisabled by rememberSaveable {
+                            mutableStateOf(!Natives.isSuEnabled())
                         }
+
+                        SwitchItem(
+                            icon = Icons.Filled.RemoveModerator,
+                            title = stringResource(R.string.settings_disable_su),
+                            summary = stringResource(R.string.settings_disable_su_summary),
+                            checked = isSuDisabled,
+                            onCheckedChange = { enabled ->
+                                val shouldEnable = !enabled
+                                if (Natives.setSuEnabled(shouldEnable)) {
+                                    isSuDisabled = enabled
+                                }
+                            }
+                        )
 
                         // 禁用内核卸载开关
                         if (Natives.version >= Natives.MINIMAL_NEW_IOCTL_KERNEL) {

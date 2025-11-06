@@ -20,7 +20,6 @@ object Natives {
     const val MINIMAL_SUPPORTED_KERNEL = 12143
 
     // 12040: Support disable sucompat mode
-    const val MINIMAL_SUPPORTED_SU_COMPAT = 12040
     const val KERNEL_SU_DOMAIN = "u:r:su:s0"
 
     const val MINIMAL_SUPPORTED_KERNEL_FULL = "v3.1.8"
