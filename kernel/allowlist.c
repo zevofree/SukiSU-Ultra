@@ -604,7 +604,7 @@ void ksu_temp_revoke_root_once(uid_t uid)
     strcpy(profile.rp_config.profile.selinux_domain, KSU_DEFAULT_SELINUX_DOMAIN);
 
     ksu_set_app_profile(&profile, false);
-    save_allow_list();
+    persistent_allow_list();
     pr_info("pending_root: UID=%d removed and persist updated\n", uid);
 }
 #endif
