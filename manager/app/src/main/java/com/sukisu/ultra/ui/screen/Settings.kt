@@ -1124,14 +1124,14 @@ fun SettingDropdown(
     if (showDialog) {
         AlertDialog(
             onDismissRequest = { showDialog = false },
-            title = { Text(title) },
+            title = { Text(text = title) },
             text = {
                 LazyColumn(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(items) { item ->
-                        val index = items.indexOf(item)
+                    items(items.size) { index ->
+                        val item = items[index]
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -1154,7 +1154,7 @@ fun SettingDropdown(
             },
             confirmButton = {
                 TextButton(onClick = { showDialog = false }) {
-                    Text(stringResource(android.R.string.cancel))
+                    Text(text = stringResource(android.R.string.cancel))
                 }
             }
         )
