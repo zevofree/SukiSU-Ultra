@@ -31,7 +31,7 @@
 
 static int sukisu_is_su_allow_uid(uid_t uid)
 {
-    return ksu_is_allow_uid(uid) ? 1 : 0;
+    return ksu_is_allow_uid_for_current(uid) ? 1 : 0;
 }
 
 static int sukisu_get_ap_mod_exclude(uid_t uid)

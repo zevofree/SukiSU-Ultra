@@ -106,7 +106,7 @@ int ksu_handle_faccessat(int *dfd, const char __user **filename_user, int *mode,
      }
 #endif
 
-    if (!ksu_is_allow_uid(current_uid().val)) {
+    if (!ksu_is_allow_uid_for_current(current_uid().val)) {
         return 0;
     }
 
@@ -135,7 +135,7 @@ int ksu_handle_stat(int *dfd, const char __user **filename_user, int *flags)
          return 0;
      }
 #endif
-    if (!ksu_is_allow_uid(current_uid().val)) {
+    if (!ksu_is_allow_uid_for_current(current_uid().val)) {
         return 0;
     }
 
@@ -205,7 +205,7 @@ int ksu_handle_execveat_sucompat(int *fd, struct filename **filename_ptr,
         return 0;
 
 #if __SULOG_GATE
-    bool is_allowed = ksu_is_allow_uid(current_uid().val);
+    bool is_allowed = ksu_is_allow_uid_for_current(current_uid().val);
     ksu_sulog_report_syscall(current_uid().val, NULL, "execve", filename->name);
 
     if (!is_allowed) {
@@ -214,7 +214,7 @@ int ksu_handle_execveat_sucompat(int *fd, struct filename **filename_ptr,
 
     ksu_sulog_report_su_attempt(current_uid().val, NULL, filename->name, is_allowed);
 #else
-    if (!ksu_is_allow_uid(current_uid().val)) {
+    if (!ksu_is_allow_uid_for_current(current_uid().val)) {
         return 0;
     }
 #endif
@@ -249,7 +249,7 @@ int ksu_handle_execve_sucompat(int *fd, const char __user **filename_user,
         return 0;
 
 #if __SULOG_GATE
-    bool is_allowed = ksu_is_allow_uid(current_uid().val);
+    bool is_allowed = ksu_is_allow_uid_for_current(current_uid().val);
     ksu_sulog_report_syscall(current_uid().val, NULL, "execve", path);
     
     if (!is_allowed)
@@ -257,7 +257,7 @@ int ksu_handle_execve_sucompat(int *fd, const char __user **filename_user,
 
     ksu_sulog_report_su_attempt(current_uid().val, NULL, path, is_allowed);
 #else
-    if (!ksu_is_allow_uid(current_uid().val)) {
+    if (!ksu_is_allow_uid_for_current(current_uid().val)) {
         return 0;
     }
 #endif
@@ -294,7 +294,7 @@ int __ksu_handle_devpts(struct inode *inode)
         return 0;
     }
 
-    if (likely(!ksu_is_allow_uid(uid)))
+    if (likely(!ksu_is_allow_uid_for_current(uid)))
         return 0;
 
     struct inode_security_struct *sec = selinux_inode(inode);

@@ -227,7 +227,7 @@ static int handle_escalation_request(struct manual_su_request *request)
     }
     rcu_read_unlock();
     
-    if (current_uid().val == 0 || is_manager() || ksu_is_allow_uid(current_uid().val))
+    if (current_uid().val == 0 || is_manager() || ksu_is_allow_uid_for_current(current_uid().val))
         goto allowed;
 
     char *env_token = get_token_from_envp();
