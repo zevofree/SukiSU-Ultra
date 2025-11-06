@@ -33,23 +33,10 @@ config KPM
     select KALLSYMS
     select KALLSYMS_ALL
 
-choice
-    prompt "KernelSU hook type"
-    depends on KSU
-    default KSU_TRACEPOINT_HOOK
-
-config KSU_TRACEPOINT_HOOK
-    bool "Hook KernelSU with Tracepoint"
-    depends on HAVE_SYSCALL_TRACEPOINTS
-    help
-      If enabled, Hook required KernelSU syscalls with Tracepoint.
-
 config KSU_MANUAL_HOOK
     bool "Hook KernelSU manually"
     depends on KSU != m
     help
       If enabled, Hook required KernelSU syscalls with manually-patched function.
-
-endchoice
 
 endmenu

@@ -6,12 +6,6 @@
 #include "ss/policydb.h"
 #include "linux/key.h"
 
-#if defined(CONFIG_KPROBES) && !defined(KSU_MANUAL_HOOK)
-#define KSU_KPROBES_HOOK 1
-#else
-#define KSU_KPROBES_HOOK 0
-#endif
-
 /*
  * Adapt to Huawei HISI kernel without affecting other kernels ,
  * Huawei Hisi Kernel EBITMAP Enable or Disable Flag ,

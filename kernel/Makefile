@@ -119,12 +119,13 @@ ccflags-y += -DKSU_MANAGER_PACKAGE=\"$(KSU_MANAGER_PACKAGE)\"
 $(info -- SukiSU Manager package name: $(KSU_MANAGER_PACKAGE))
 endif
 
-ifeq ($(CONFIG_KSU_TRACEPOINT_HOOK), y)
-$(info -- SukiSU: KSU_TRACEPOINT_HOOK)
-ccflags-y += -DKSU_HAVE_SYSCALL_TRACEPOINTS_HOOK
-else ifeq ($(CONFIG_KSU_MANUAL_HOOK), y)
-$(info -- SukiSU: KSU_MANUAL_HOOK)
+ifeq ($(CONFIG_KSU_MANUAL_HOOK), y)
 ccflags-y += -DKSU_MANUAL_HOOK
+$(info -- SukiSU: KSU_MANUAL_HOOK)
+else
+ccflags-y += -DKSU_HAVE_SYSCALL_TRACEPOINTS_HOOK
+ccflags-y += -DKSU_KPROBES_HOOK
+$(info -- SukiSU: KSU_TRACEPOINT_HOOK)
 endif
 
 KERNEL_VERSION := $(VERSION).$(PATCHLEVEL)
