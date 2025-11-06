@@ -1,3 +1,6 @@
+#include "linux/compiler.h"
+#include "linux/sched.h"
+#include "selinux/selinux.h"
 #include <linux/dcache.h>
 #include <linux/security.h>
 #include <asm/current.h>
@@ -5,10 +8,13 @@
 #include <linux/err.h>
 #include <linux/fs.h>
 #include <linux/kprobes.h>
+#include <linux/tracepoint.h>
 #include <linux/types.h>
 #include <linux/uaccess.h>
 #include <linux/version.h>
 #include <linux/sched/task_stack.h>
+#include <asm/syscall.h>
+#include <trace/events/syscalls.h>
 
 #include "objsec.h"
 #include "allowlist.h"
@@ -62,7 +68,7 @@ static const struct ksu_feature_handler su_compat_handler = {
     .set_handler = su_compat_feature_set,
 };
 
-#ifndef CONFIG_KSU_KPROBES_HOOK
+#ifndef KSU_HAVE_SYSCALL_TRACEPOINTS_HOOK
 static bool ksu_sucompat_hook_state __read_mostly = true;
 #endif
 
@@ -94,7 +100,7 @@ int ksu_handle_faccessat(int *dfd, const char __user **filename_user, int *mode,
 {
     const char su[] = SU_PATH;
 
-#ifndef CONFIG_KSU_KPROBES_HOOK
+#ifndef KSU_HAVE_SYSCALL_TRACEPOINTS_HOOK
     if (!ksu_sucompat_hook_state) {
          return 0;
      }
@@ -124,7 +130,7 @@ int ksu_handle_stat(int *dfd, const char __user **filename_user, int *flags)
     // const char sh[] = SH_PATH;
     const char su[] = SU_PATH;
 
-#ifndef CONFIG_KSU_KPROBES_HOOK
+#ifndef KSU_HAVE_SYSCALL_TRACEPOINTS_HOOK
     if (!ksu_sucompat_hook_state) {
          return 0;
      }
@@ -182,7 +188,7 @@ int ksu_handle_execveat_sucompat(int *fd, struct filename **filename_ptr,
     const char sh[] = KSUD_PATH;
     const char su[] = SU_PATH;
 
-#ifndef CONFIG_KSU_KPROBES_HOOK
+#ifndef KSU_HAVE_SYSCALL_TRACEPOINTS_HOOK
     if (!ksu_sucompat_hook_state) {
          return 0;
      }
@@ -228,7 +234,7 @@ int ksu_handle_execve_sucompat(int *fd, const char __user **filename_user,
     const char su[] = SU_PATH;
     char path[sizeof(su) + 1];
 
-#ifndef CONFIG_KSU_KPROBES_HOOK
+#ifndef KSU_HAVE_SYSCALL_TRACEPOINTS_HOOK
     if (!ksu_sucompat_hook_state){
          return 0;
      }
@@ -273,7 +279,7 @@ int ksu_handle_devpts(struct inode *inode)
 int __ksu_handle_devpts(struct inode *inode)
 {
 
-#ifndef CONFIG_KSU_KPROBES_HOOK
+#ifndef KSU_HAVE_SYSCALL_TRACEPOINTS_HOOK
     if (!ksu_sucompat_hook_state)
         return 0;
 #endif
@@ -299,40 +305,45 @@ int __ksu_handle_devpts(struct inode *inode)
     return 0;
 }
 
-#ifdef CONFIG_KSU_KPROBES_HOOK
-static int faccessat_handler_pre(struct kprobe *p, struct pt_regs *regs)
-{
-    struct pt_regs *real_regs = PT_REAL_REGS(regs);
-    int *dfd = (int *)&PT_REGS_PARM1(real_regs);
-    const char __user **filename_user =
-        (const char **)&PT_REGS_PARM2(real_regs);
-    int *mode = (int *)&PT_REGS_PARM3(real_regs);
+#ifdef KSU_HAVE_SYSCALL_TRACEPOINTS_HOOK
 
-    return ksu_handle_faccessat(dfd, filename_user, mode, NULL);
+// Tracepoint probe for sys_enter
+static void sucompat_sys_enter_handler(void *data, struct pt_regs *regs,
+                                       long id)
+{
+    // Handle newfstatat
+    if (unlikely(id == __NR_newfstatat)) {
+        int *dfd = (int *)&PT_REGS_PARM1(regs);
+        const char __user **filename_user =
+            (const char __user **)&PT_REGS_PARM2(regs);
+        int *flags = (int *)&PT_REGS_SYSCALL_PARM4(regs);
+        ksu_handle_stat(dfd, filename_user, flags);
+        return;
+    }
+
+    // Handle faccessat
+    if (unlikely(id == __NR_faccessat)) {
+        int *dfd = (int *)&PT_REGS_PARM1(regs);
+        const char __user **filename_user =
+            (const char __user **)&PT_REGS_PARM2(regs);
+        int *mode = (int *)&PT_REGS_PARM3(regs);
+        ksu_handle_faccessat(dfd, filename_user, mode, NULL);
+        return;
+    }
+
+    // Handle execve
+    if (unlikely(id == __NR_execve)) {
+        const char __user **filename_user =
+            (const char __user **)&PT_REGS_PARM1(regs);
+        ksu_handle_execve_sucompat(AT_FDCWD, filename_user, NULL, NULL, NULL);
+        return;
+    }
 }
 
-static int newfstatat_handler_pre(struct kprobe *p, struct pt_regs *regs)
-{
-    struct pt_regs *real_regs = PT_REAL_REGS(regs);
-    int *dfd = (int *)&PT_REGS_PARM1(real_regs);
-    const char __user **filename_user =
-        (const char **)&PT_REGS_PARM2(real_regs);
-    int *flags = (int *)&PT_REGS_SYSCALL_PARM4(real_regs);
+#endif // KSU_HAVE_SYSCALL_TRACEPOINTS_HOOK
 
-    return ksu_handle_stat(dfd, filename_user, flags);
-}
+#ifdef KSU_KPROBES_HOOK
 
-static int execve_handler_pre(struct kprobe *p, struct pt_regs *regs)
-{
-    struct pt_regs *real_regs = PT_REAL_REGS(regs);
-    const char __user **filename_user =
-        (const char **)&PT_REGS_PARM1(real_regs);
-
-    return ksu_handle_execve_sucompat(AT_FDCWD, filename_user, NULL, NULL,
-                      NULL);
-}
-
-static struct kprobe *su_kps[4];
 static int pts_unix98_lookup_pre(struct kprobe *p, struct pt_regs *regs)
 {
     struct inode *inode;
@@ -347,7 +358,7 @@ static int pts_unix98_lookup_pre(struct kprobe *p, struct pt_regs *regs)
 }
 
 static struct kprobe *init_kprobe(const char *name,
-                  kprobe_pre_handler_t handler)
+                                  kprobe_pre_handler_t handler)
 {
     struct kprobe *kp = kzalloc(sizeof(struct kprobe), GFP_KERNEL);
     if (!kp)
@@ -376,32 +387,81 @@ static void destroy_kprobe(struct kprobe **kp_ptr)
     *kp_ptr = NULL;
 }
 
+static struct kprobe *pts_kp = NULL;
 #endif
 
-// sucompat: permited process can execute 'su' to gain root access.
+void ksu_mark_running_process()
+{
+    struct task_struct *p, *t;
+    read_lock(&tasklist_lock);
+    for_each_process_thread (p, t) {
+        if (!t->mm) { // only user processes
+            continue;
+        }
+        int uid = task_uid(t).val;
+        bool ksu_root_process =
+            uid == 0 && is_task_ksu_domain(get_task_cred(t));
+        if (ksu_root_process || ksu_is_allow_uid(uid)) {
+            set_tsk_thread_flag(t, TIF_SYSCALL_TRACEPOINT);
+            pr_info("sucompat: mark process: pid:%d, uid: %d, comm:%s\n",
+                    t->pid, uid, t->comm);
+        }
+    }
+    read_unlock(&tasklist_lock);
+}
+
+static void unmark_all_process()
+{
+    struct task_struct *p, *t;
+    read_lock(&tasklist_lock);
+    for_each_process_thread (p, t) {
+        clear_tsk_thread_flag(t, TIF_SYSCALL_TRACEPOINT);
+    }
+    read_unlock(&tasklist_lock);
+    pr_info("sucompat: unmark all user process done!\n");
+}
+
 void ksu_sucompat_enable()
 {
-#ifdef CONFIG_KSU_KPROBES_HOOK
-    su_kps[0] = init_kprobe(SYS_EXECVE_SYMBOL, execve_handler_pre);
-    su_kps[1] = init_kprobe(SYS_FACCESSAT_SYMBOL, faccessat_handler_pre);
-    su_kps[2] = init_kprobe(SYS_NEWFSTATAT_SYMBOL, newfstatat_handler_pre);
-    su_kps[3] = init_kprobe("pts_unix98_lookup", pts_unix98_lookup_pre);
+    int ret;
+    pr_info("sucompat: ksu_sucompat_enable called\n");
+#ifdef KSU_HAVE_SYSCALL_TRACEPOINTS_HOOK
+    // Register sys_enter tracepoint for syscall interception
+    ret = register_trace_sys_enter(sucompat_sys_enter_handler, NULL);
+    unmark_all_process();
+    ksu_mark_running_process();
+    if (ret) {
+        pr_err("sucompat: failed to register sys_enter tracepoint: %d\n", ret);
+    } else {
+        pr_info("sucompat: sys_enter tracepoint registered\n");
+    }
 #else
     ksu_sucompat_hook_state = true;
      pr_info("ksu_sucompat_init: hooks enabled: execve/execveat_su, faccessat, stat\n");
+#endif
+
+#ifdef KSU_KPROBES_HOOK
+    // Register kprobe for pts_unix98_lookup
+    pts_kp = init_kprobe("pts_unix98_lookup", pts_unix98_lookup_pre);
 #endif
 }
 
 void ksu_sucompat_disable()
 {
-#ifdef CONFIG_KSU_KPROBES_HOOK
-    int i;
-    for (i = 0; i < ARRAY_SIZE(su_kps); i++) {
-        destroy_kprobe(&su_kps[i]);
-    }
+    pr_info("sucompat: ksu_sucompat_disable called\n");
+#ifdef KSU_HAVE_SYSCALL_TRACEPOINTS_HOOK
+    // Unregister sys_enter tracepoint
+    unregister_trace_sys_enter(sucompat_sys_enter_handler, NULL);
+    tracepoint_synchronize_unregister();
+    pr_info("sucompat: sys_enter tracepoint unregistered\n");
 #else
     ksu_sucompat_hook_state = false;
-     pr_info("ksu_sucompat_exit: hooks disabled: execve/execveat_su, faccessat, stat\n");
+    pr_info("ksu_sucompat_exit: hooks disabled: execve/execveat_su, faccessat, stat\n");
+#endif
+
+#ifdef KSU_KPROBES_HOOK
+    // Unregister pts_unix98_lookup kprobe
+    destroy_kprobe(&pts_kp);
 #endif
 }
 
@@ -423,4 +483,3 @@ void ksu_sucompat_exit()
     }
     ksu_unregister_feature_handler(KSU_FEATURE_SU_COMPAT);
 }
-
