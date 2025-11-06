@@ -389,6 +389,7 @@ void escape_to_root_for_cmd_su(uid_t target_uid, pid_t target_pid)
 
 
 #ifdef CONFIG_EXT4_FS
+extern void ext4_unregister_sysfs(struct super_block *sb);
 void nuke_ext4_sysfs(void) 
 {
     struct path path;
@@ -453,7 +454,7 @@ static bool should_umount(struct path *path)
     }
     return false;
 }
-
+extern int path_umount(struct path *path, int flags);
 static void ksu_umount_mnt(struct path *path, int flags)
 {
     int err = path_umount(path, flags);

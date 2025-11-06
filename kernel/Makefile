@@ -159,7 +159,7 @@ ifeq ($(shell grep -q "struct proc_ops " $(srctree)/include/linux/proc_fs.h; ech
 ccflags-y += -DKSU_COMPAT_HAS_PROC_OPS
 endif
 
-ccflags-y += -Wno-implicit-function-declaration -Wno-strict-prototypes -Wno-int-conversion -Wno-gcc-compat -Wno-missing-prototypes
+ccflags-y += -Wno-strict-prototypes -Wno-int-conversion -Wno-gcc-compat -Wno-missing-prototypes
 ccflags-y += -Wno-declaration-after-statement -Wno-unused-function -Wno-unused-variable
 
 all:
