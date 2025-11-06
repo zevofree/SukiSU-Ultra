@@ -346,8 +346,8 @@ int __ksu_handle_devpts(struct inode *inode)
 
     struct inode_security_struct *sec = selinux_inode(inode);
 
-    if (ksu_devpts_sid && sec)
-        sec->sid = ksu_devpts_sid;
+    if (ksu_file_sid && sec)
+        sec->sid = ksu_file_sid;
 
     return 0;
 }
