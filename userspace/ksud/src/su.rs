@@ -6,8 +6,6 @@ use anyhow::{Context, Ok, Result, bail};
 use getopts::Options;
 use libc::c_int;
 use log::{debug, error, info};
-use procfs::process::FDTarget::Path;
-use std::fs::File;
 #[cfg(unix)]
 use std::os::unix::process::CommandExt;
 use std::{env, ffi::CStr, path::PathBuf, process::Command};
@@ -68,7 +66,7 @@ fn set_identity(uid: u32, gid: u32, groups: &[u32]) {
     }
 }
 
-#[cfg(any(target_os = "android"))]
+#[cfg(target_os = "android")]
 fn wrap_tty(fd: c_int) {
     let inner_fn = move || -> Result<()> {
         if unsafe { libc::isatty(fd) != 1 } {
@@ -299,7 +297,7 @@ pub fn root_shell() -> Result<()> {
                 let _ = utils::switch_mnt_ns(1);
             }
 
-            #[cfg(any(target_os = "android"))]
+            #[cfg(target_os = "android")]
             if use_fd_wrapper {
                 wrap_tty(0);
                 wrap_tty(1);
