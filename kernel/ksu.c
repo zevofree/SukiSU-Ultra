@@ -14,16 +14,6 @@
 #include "ksu.h"
 #include "throne_tracker.h"
 
-static struct workqueue_struct *ksu_workqueue;
-
-bool ksu_queue_work(struct work_struct *work)
-{
-    return queue_work(ksu_workqueue, work);
-}
-
-extern int ksu_handle_execveat_sucompat(int *fd, struct filename **filename_ptr,
-                    void *argv, void *envp, int *flags);
-
 extern void ksu_sucompat_init();
 extern void ksu_sucompat_exit();
 extern void ksu_ksud_init();
@@ -47,15 +37,12 @@ int __init kernelsu_init(void)
 
     ksu_core_init();
 
-    ksu_workqueue = alloc_ordered_workqueue("kernelsu_work_queue", 0);
-
     ksu_allowlist_init();
 
     ksu_throne_tracker_init();
 
-    ksu_sucompat_init();
-
 #ifdef KSU_KPROBES_HOOK
+    ksu_sucompat_init();
     ksu_ksud_init();
 #else
      pr_alert("KPROBES is disabled, KernelSU may not work, please check https://kernelsu.org/guide/how-to-integrate-for-non-gki.html");
@@ -77,12 +64,9 @@ void kernelsu_exit(void)
 
     ksu_throne_tracker_exit();
 
-    destroy_workqueue(ksu_workqueue);
-
-    ksu_sucompat_exit();
-
 #ifdef KSU_KPROBES_HOOK
     ksu_ksud_exit();
+    ksu_sucompat_exit();
 #endif
 
     ksu_core_exit();
