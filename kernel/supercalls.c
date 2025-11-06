@@ -17,6 +17,7 @@
 #include "manager.h"
 #include "sulog.h"
 #include "selinux/selinux.h"
+#include "core_hook.h"
 #include "kernel_compat.h"
 #include "throne_comm.h"
 #include "dynamic_manager.h"
@@ -24,14 +25,6 @@
 #ifdef CONFIG_KSU_MANUAL_SU
 #include "manual_su.h"
 #endif
-
-// Forward declarations from core_hook.c
-extern void escape_to_root(void);
-extern void nuke_ext4_sysfs(void);
-extern bool ksu_module_mounted;
-extern int handle_sepolicy(unsigned long arg3, void __user *arg4);
-extern void ksu_sucompat_init(void);
-extern void ksu_sucompat_exit(void);
 
 bool ksu_uid_scanner_enabled = false;
 

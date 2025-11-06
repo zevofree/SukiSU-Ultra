@@ -8,14 +8,10 @@
 void __init ksu_core_init(void);
 void ksu_core_exit(void);
 
-#define KSU_PROC_UMOUNT 50
+void escape_to_root(void);
 
-static inline bool ksu_is_current_proc_umounted(void) {
-    return test_ti_thread_flag(&current->thread_info, KSU_PROC_UMOUNT);
-}
+void nuke_ext4_sysfs(void);
 
-static inline void ksu_set_current_proc_umounted(void) {
-    set_ti_thread_flag(&current->thread_info, KSU_PROC_UMOUNT);
-}
+extern bool ksu_module_mounted;
 
 #endif
