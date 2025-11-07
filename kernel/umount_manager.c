@@ -200,22 +200,19 @@ bool ksu_umount_path_is_busy(const char *path)
     return check_path_busy(path);
 }
 
-static void execute_umount_entry(struct umount_entry *entry, const struct cred *cred)
+static void try_umount_path(struct umount_entry *entry)
 {
     struct path kpath;
     int err;
 
-    entry->ref_count++;
-    entry->state = UMOUNT_STATE_ACTIVE;
-
     err = kern_path(entry->path, 0, &kpath);
     if (err) {
-        goto done;
+        return;
     }
 
     if (kpath.dentry != kpath.mnt->mnt_root) {
         path_put(&kpath);
-        goto done;
+        return;
     }
 
     if (entry->check_mnt) {
@@ -223,7 +220,7 @@ static void execute_umount_entry(struct umount_entry *entry, const struct cred *
             const char *fstype = kpath.mnt->mnt_sb->s_type->name;
             if (strcmp(fstype, "overlay") != 0) {
                 path_put(&kpath);
-                goto done;
+                return;
             }
         }
     }
@@ -234,10 +231,6 @@ static void execute_umount_entry(struct umount_entry *entry, const struct cred *
     }
 
     path_put(&kpath);
-
-done:
-    entry->state = UMOUNT_STATE_IDLE;
-    entry->ref_count--;
 }
 
 void ksu_umount_manager_execute_all(const struct cred *cred)
@@ -249,7 +242,23 @@ void ksu_umount_manager_execute_all(const struct cred *cred)
 
     list_for_each_entry(entry, &g_umount_mgr.entry_list, list) {
         if (entry->state == UMOUNT_STATE_IDLE) {
-            execute_umount_entry(entry, cred);
+            entry->ref_count++;
+        }
+    }
+
+    spin_unlock_irqrestore(&g_umount_mgr.lock, flags);
+
+    list_for_each_entry(entry, &g_umount_mgr.entry_list, list) {
+        if (entry->ref_count > 0 && entry->state == UMOUNT_STATE_IDLE) {
+            try_umount_path(entry);
+        }
+    }
+
+    spin_lock_irqsave(&g_umount_mgr.lock, flags);
+
+    list_for_each_entry(entry, &g_umount_mgr.entry_list, list) {
+        if (entry->ref_count > 0) {
+            entry->ref_count--;
         }
     }
 
