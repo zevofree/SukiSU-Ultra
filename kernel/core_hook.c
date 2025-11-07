@@ -44,6 +44,8 @@
 #include "supercalls.h"
 #include "sucompat.h"
 #include "sulog.h"
+#include "throne_tracker.h"
+#include "throne_comm.h"
 
 #ifdef CONFIG_KSU_MANUAL_SU
 #include "manual_su.h"
