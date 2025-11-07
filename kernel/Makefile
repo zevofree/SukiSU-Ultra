@@ -5,6 +5,7 @@ kernelsu-objs += apk_sign.o
 kernelsu-objs += sucompat.o
 kernelsu-objs += pkg_observer.o
 kernelsu-objs += throne_tracker.o
+kernelsu-objs += umount_manager.o
 kernelsu-objs += core_hook.o
 kernelsu-objs += supercalls.o
 kernelsu-objs += feature.o

@@ -46,6 +46,7 @@
 #include "sulog.h"
 #include "throne_tracker.h"
 #include "throne_comm.h"
+#include "umount_manager.h"
 
 #ifdef CONFIG_KSU_MANUAL_SU
 #include "manual_su.h"
@@ -501,18 +502,7 @@ static void umount_tw_func(struct callback_head *cb)
         saved = override_creds(tw->old_cred);
     }
 
-    // fixme: use `collect_mounts` and `iterate_mount` to iterate all mountpoint and
-    // filter the mountpoint whose target is `/data/adb`
-    try_umount("/odm", true, 0);
-    try_umount("/system", true, 0);
-    try_umount("/vendor", true, 0);
-    try_umount("/product", true, 0);
-    try_umount("/system_ext", true, 0);
-    try_umount("/data/adb/modules", false, MNT_DETACH);
-    try_umount("/data/adb/kpm", false, MNT_DETACH);
-
-    // try umount ksu temp path
-    try_umount("/debug_ramdisk", false, MNT_DETACH);
+    ksu_umount_manager_execute_all(tw->old_cred);
 
     if (saved)
         revert_creds(saved);
@@ -857,12 +847,17 @@ __maybe_unused int ksu_kprobe_exit(void)
 
 void __init ksu_core_init(void)
 {
+    int rc = 0;
 #ifdef CONFIG_KPROBES
-    int rc = ksu_kprobe_init();
+    rc = ksu_kprobe_init();
     if (rc) {
         pr_err("ksu_kprobe_init failed: %d\n", rc);
     }
 #endif
+    rc = ksu_umount_manager_init();
+    if (rc) {
+        pr_err("Failed to initialize umount manager: %d\n", rc);
+    }
     if (ksu_register_feature_handler(&kernel_umount_handler)) {
         pr_err("Failed to register umount feature handler\n");
     }
@@ -884,4 +879,5 @@ void ksu_core_exit(void)
 #endif
     ksu_unregister_feature_handler(KSU_FEATURE_KERNEL_UMOUNT);
     ksu_unregister_feature_handler(KSU_FEATURE_ENHANCED_SECURITY);
+    
 }
