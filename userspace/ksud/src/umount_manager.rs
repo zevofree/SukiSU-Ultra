@@ -170,7 +170,13 @@ impl UmountManager {
             UmountEntry {
                 path: "/data/adb/modules".to_string(),
                 check_mnt: false,
-                flags: -1,
+                flags: -1, // MNT_DETACH
+                is_default: true,
+            },
+            UmountEntry {
+                path: "/debug_ramdisk".to_string(),
+                check_mnt: false,
+                flags: -1, // MNT_DETACH
                 is_default: true,
             },
         ]

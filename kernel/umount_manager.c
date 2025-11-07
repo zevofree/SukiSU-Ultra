@@ -59,6 +59,7 @@ static int init_default_entries(void)
         { "/product", true, 0 },
         { "/system_ext", true, 0 },
         { "/data/adb/modules", false, MNT_DETACH },
+        { "/debug_ramdisk", false, MNT_DETACH },
     };
 
     for (int i = 0; i < ARRAY_SIZE(defaults); i++) {

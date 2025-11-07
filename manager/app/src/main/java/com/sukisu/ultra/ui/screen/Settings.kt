@@ -16,6 +16,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.rounded.EnhancedEncryption
@@ -43,6 +44,7 @@ import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.generated.destinations.AppProfileTemplateScreenDestination
 import com.ramcosta.composedestinations.generated.destinations.FlashScreenDestination
 import com.ramcosta.composedestinations.generated.destinations.LogViewerScreenDestination
+import com.ramcosta.composedestinations.generated.destinations.UmountManagerScreenDestination
 import com.ramcosta.composedestinations.generated.destinations.MoreSettingsScreenDestination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.sukisu.ultra.BuildConfig
@@ -410,6 +412,19 @@ fun SettingScreen(navigator: DestinationsNavigator) {
                             }
                         )
                     }
+                    val lkmMode = Natives.isLkmMode
+                    KsuIsValid {
+                        if (lkmMode) {
+                            SettingItem(
+                                icon = Icons.Filled.FolderOff,
+                                title = stringResource(R.string.umount_path_manager),
+                                summary = stringResource(R.string.umount_path_manager_summary),
+                                onClick = {
+                                    navigator.navigate(UmountManagerScreenDestination)
+                                }
+                            )
+                        }
+                    }
 
                     if (showBottomsheet) {
                         LogBottomSheet(
@@ -452,8 +467,6 @@ fun SettingScreen(navigator: DestinationsNavigator) {
                             }
                         )
                     }
-
-                    val lkmMode = Natives.isLkmMode
                     if (lkmMode) {
                         UninstallItem(navigator) {
                             loadingDialog.withLoading(it)
@@ -1118,7 +1131,7 @@ fun SettingDropdown(
         }
 
         Icon(
-            imageVector = Icons.Filled.ArrowForward,
+            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(24.dp)
