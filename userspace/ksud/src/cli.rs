@@ -361,7 +361,7 @@ enum Umount {
         check_mnt: bool,
 
         /// Umount flags (0 or 8 for MNT_DETACH)
-        #[arg(long, default_value = "0")]
+        #[arg(long, default_value = "-1")]
         flags: i32,
     },
 

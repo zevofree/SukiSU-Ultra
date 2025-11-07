@@ -109,6 +109,9 @@ int ksu_umount_manager_add(const char *path, bool check_mnt, int flags, bool is_
     unsigned long irqflags;
     int ret = 0;
 
+    if (flags == -1)
+        flags = MNT_DETACH;
+
     if (!path || strlen(path) == 0 || strlen(path) >= 256) {
         return -EINVAL;
     }

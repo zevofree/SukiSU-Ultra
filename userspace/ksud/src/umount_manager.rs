@@ -87,7 +87,11 @@ impl UmountManager {
     }
 
     pub fn add_entry(&mut self, path: &str, check_mnt: bool, flags: i32) -> Result<()> {
-        let exists = self.defaults.iter().chain(&self.config.entries).any(|e| e.path == path);
+        let exists = self
+            .defaults
+            .iter()
+            .chain(&self.config.entries)
+            .any(|e| e.path == path);
         if exists {
             return Err(anyhow!("Entry already exists: {}", path));
         }
@@ -166,7 +170,7 @@ impl UmountManager {
             UmountEntry {
                 path: "/data/adb/modules".to_string(),
                 check_mnt: false,
-                flags: 0x00000002, // MNT_DETACH
+                flags: -1,
                 is_default: true,
             },
         ]
