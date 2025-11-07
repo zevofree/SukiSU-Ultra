@@ -55,6 +55,11 @@ pub fn on_post_data_fs() -> Result<()> {
     // Start UID scanner daemon with highest priority
     uid_scanner::start_uid_scanner_daemon()?;
 
+    if is_safe_mode() {
+        warn!("safe mode, skip load feature config");
+    } else if let Err(e) = crate::umount_manager::load_and_apply_config() {
+        warn!("Failed to load umount config: {e}");
+    }
     // tell kernel that we've mount the module, so that it can do some optimization
     ksucalls::report_module_mounted();
 
