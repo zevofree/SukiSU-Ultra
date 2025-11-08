@@ -95,56 +95,6 @@ static bool is_appuid(uid_t uid)
     return appid >= FIRST_APPLICATION_UID && appid <= LAST_APPLICATION_UID;
 }
 
-static bool should_umount(struct path *path)
-{
-    if (!path) {
-        return false;
-    }
-
-    if (current->nsproxy->mnt_ns == init_nsproxy.mnt_ns) {
-        pr_info("ignore global mnt namespace process: %d\n",
-            current_uid().val);
-        return false;
-    }
-
-    if (path->mnt && path->mnt->mnt_sb && path->mnt->mnt_sb->s_type) {
-        const char *fstype = path->mnt->mnt_sb->s_type->name;
-        return strcmp(fstype, "overlay") == 0;
-    }
-    return false;
-}
-extern int path_umount(struct path *path, int flags);
-static void ksu_umount_mnt(struct path *path, int flags)
-{
-    int err = path_umount(path, flags);
-    if (err) {
-        pr_info("umount %s failed: %d\n", path->dentry->d_iname, err);
-    }
-}
-
-static void try_umount(const char *mnt, bool check_mnt, int flags)
-{
-    struct path path;
-    int err = kern_path(mnt, 0, &path);
-    if (err) {
-        return;
-    }
-
-    if (path.dentry != path.mnt->mnt_root) {
-        // it is not root mountpoint, maybe umounted by others already.
-        path_put(&path);
-        return;
-    }
-
-    // we are only interest in some specific mounts
-    if (check_mnt && !should_umount(&path)) {
-        path_put(&path);
-        return;
-    }
-
-    ksu_umount_mnt(&path, flags);
-}
-
 int ksu_handle_setresuid(uid_t ruid, uid_t euid, uid_t suid)
 {
     uid_t new_uid = ruid;
