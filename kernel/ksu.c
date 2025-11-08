@@ -48,8 +48,9 @@ int __init kernelsu_init(void)
 
     ksu_throne_tracker_init();
 
-#ifdef KSU_KPROBES_HOOK
     ksu_sucompat_init();
+
+#ifdef KSU_KPROBES_HOOK
     ksu_ksud_init();
 #else
      pr_alert("KPROBES is disabled, KernelSU may not work, please check https://kernelsu.org/guide/how-to-integrate-for-non-gki.html");
@@ -74,9 +75,10 @@ void kernelsu_exit(void)
 
     destroy_workqueue(ksu_workqueue);
 
+    ksu_sucompat_exit();
+
 #ifdef KSU_KPROBES_HOOK
     ksu_ksud_exit();
-    ksu_sucompat_exit();
 #endif
 
     ksu_core_exit();

@@ -149,8 +149,8 @@ int ksu_handle_faccessat(int *dfd, const char __user **filename_user, int *mode,
 
 #ifndef KSU_HAVE_SYSCALL_TRACEPOINTS_HOOK
     if (!ksu_sucompat_hook_state) {
-         return 0;
-     }
+        return 0;
+    }
 #endif
 
     if (!ksu_is_allow_uid_for_current(current_uid().val)) {
