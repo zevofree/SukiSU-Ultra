@@ -8,11 +8,6 @@
 #include "klog.h" // IWYU pragma: keep
 #include "kernel_compat.h"
 
-long ksu_strncpy_from_user_nofault(char *dst, const void __user *unsafe_addr,
-                   long count)
-{
-    return strncpy_from_user_nofault(dst, unsafe_addr, count);
-}
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 2) // Android backport this feature in 5.10.2
 struct action_cache {

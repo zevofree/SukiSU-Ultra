@@ -4,10 +4,6 @@
 #include <linux/fs.h>
 #include <linux/version.h>
 
-extern long ksu_strncpy_from_user_nofault(char *dst,
-                      const void __user *unsafe_addr,
-                      long count);
-
 /*
  * ksu_copy_from_user_retry
  * try nofault copy first, if it fails, try with plain
