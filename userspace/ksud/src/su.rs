@@ -5,7 +5,7 @@ use crate::{
 use anyhow::{Context, Ok, Result, bail};
 use getopts::Options;
 use libc::c_int;
-use log::{debug, error, info};
+use log::{error, warn};
 #[cfg(unix)]
 use std::os::unix::process::CommandExt;
 use std::{env, ffi::CStr, path::PathBuf, process::Command};
