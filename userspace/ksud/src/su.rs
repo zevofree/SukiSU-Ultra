@@ -1,6 +1,5 @@
 use crate::{
     defs,
-    ksucalls::proxy_file,
     utils::{self, umask},
 };
 use anyhow::{Context, Ok, Result, bail};
@@ -10,6 +9,9 @@ use log::{error, warn};
 #[cfg(unix)]
 use std::os::unix::process::CommandExt;
 use std::{env, ffi::CStr, path::PathBuf, process::Command};
+
+#[cfg(any(target_os = "linux", target_os = "android"))]
+use crate::ksucalls::get_wrapped_fd;
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 use rustix::{
@@ -71,7 +73,7 @@ fn wrap_tty(fd: c_int) {
             warn!("not a tty: {fd}");
             return Ok(());
         }
-        let new_fd = proxy_file(fd).context("proxy_file")?;
+        let new_fd = get_wrapped_fd(fd).context("get_wrapped_fd")?;
         if unsafe { libc::dup2(new_fd, fd) } == -1 {
             bail!("dup {new_fd} -> {fd} errno: {}", unsafe {
                 *libc::__errno()
@@ -147,6 +149,7 @@ pub fn root_shell() -> Result<()> {
         "Specify a supplementary group. The first specified supplementary group is also used as a primary group if the option -g is not specified.",
         "GROUP",
     );
+    opts.optflag("W", "no-wrapper", "don't use ksu fd wrapper");
 
     // Replace -cn with -z, -mm with -M for supporting getopt_long
     let args = args
@@ -190,6 +193,7 @@ pub fn root_shell() -> Result<()> {
     let mut is_login = matches.opt_present("l");
     let preserve_env = matches.opt_present("p");
     let mount_master = matches.opt_present("M");
+    let use_fd_wrapper = !matches.opt_present("W");
 
     let groups = matches
         .opt_strs("G")
@@ -289,7 +293,7 @@ pub fn root_shell() -> Result<()> {
             }
 
             #[cfg(target_os = "android")]
-            if true {
+            if use_fd_wrapper {
                 wrap_tty(0);
                 wrap_tty(1);
                 wrap_tty(2);
