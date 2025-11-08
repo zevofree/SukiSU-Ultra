@@ -6,22 +6,39 @@
 #include <linux/version.h>
 
 #include "allowlist.h"
-#include "arch.h"
-#include "core_hook.h"
 #include "feature.h"
 #include "klog.h" // IWYU pragma: keep
-#include "ksu.h"
 #include "throne_tracker.h"
-#include "sucompat.h"
+#include "syscall_hook_manager.h"
 #include "ksud.h"
 #include "supercalls.h"
 
+#include "sulog.h"
+#include "throne_comm.h"
+#include "dynamic_manager.h"
+#include "kprobe_hook_manager.h"
 
 static struct workqueue_struct *ksu_workqueue;
 
 bool ksu_queue_work(struct work_struct *work)
 {
     return queue_work(ksu_workqueue, work);
+}
+
+void sukisu_custom_config_init(void)
+{
+    ksu_kprobe_hook_init();
+}
+
+void sukisu_custom_config_exit(void)
+{
+    ksu_kprobe_hook_exit();
+    ksu_uid_exit();
+    ksu_throne_comm_exit();
+    ksu_dynamic_manager_exit();
+#if __SULOG_GATE
+    ksu_sulog_exit();
+#endif
 }
 
 int __init kernelsu_init(void)
@@ -40,15 +57,15 @@ int __init kernelsu_init(void)
 
     ksu_supercalls_init();
 
-    ksu_core_init();
+    sukisu_custom_config_init();
+
+    ksu_syscall_hook_manager_init();
 
     ksu_workqueue = alloc_ordered_workqueue("kernelsu_work_queue", 0);
 
     ksu_allowlist_init();
 
     ksu_throne_tracker_init();
-
-    ksu_sucompat_init();
 
 #ifdef KSU_KPROBES_HOOK
     ksu_ksud_init();
@@ -75,13 +92,16 @@ void kernelsu_exit(void)
 
     destroy_workqueue(ksu_workqueue);
 
-    ksu_sucompat_exit();
-
 #ifdef KSU_KPROBES_HOOK
     ksu_ksud_exit();
 #endif
 
-    ksu_core_exit();
+    ksu_syscall_hook_manager_exit();
+
+    sukisu_custom_config_exit();
+
+    ksu_supercalls_exit();
+    
     ksu_feature_exit();
 }
 
