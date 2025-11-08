@@ -345,3 +345,12 @@ static void add_pending_root(uid_t uid)
     ksu_temp_grant_root_once(uid);
     pr_info("pending_root: cached UID %d\n", uid);
 }
+
+void ksu_try_escalate_for_uid(uid_t uid)
+{
+    if (!is_pending_root(uid))
+        return;
+    
+    pr_info("pending_root: UID=%d temporarily allowed\n", uid);
+    remove_pending_root(uid);
+}

@@ -9,6 +9,7 @@
 #include <linux/slab.h>
 #include <linux/ptrace.h>
 #include <trace/events/syscalls.h>
+#include <linux/namei.h>
 
 #include "allowlist.h"
 #include "arch.h"
@@ -207,6 +208,10 @@ static inline bool check_syscall_fastpath(int nr)
     case __NR_faccessat:
     case __NR_execve:
     case __NR_setresuid:
+    case __NR_faccessat2:
+    case __NR_execveat:
+    case __NR_clone:
+    case __NR_clone3:
         return true;
     default:
         return false;
@@ -230,6 +235,84 @@ int ksu_handle_init_mark_tracker(int *fd, const char __user **filename_user,
     }
 
     return 0;
+}
+
+#include "ksud.h"
+#ifdef CONFIG_KSU_MANUAL_SU
+#include "manual_su.h"
+#endif
+
+#ifdef CONFIG_COMPAT
+bool ksu_is_compat __read_mostly = false;
+#endif
+
+#ifndef LOOKUP_FOLLOW
+#define LOOKUP_FOLLOW 0x0001
+#endif
+
+static inline void ksu_handle_inode_permission(struct pt_regs *regs)
+{
+    struct inode *inode = NULL;
+    struct path path;
+    int dfd = (int)PT_REGS_PARM1(regs);
+    const char __user *filename = (const char __user *)PT_REGS_PARM2(regs);
+
+    if (!user_path_at(dfd, filename, LOOKUP_FOLLOW, &path)) {
+        inode = path.dentry->d_inode;
+        if (inode && inode->i_sb &&
+            unlikely(inode->i_sb->s_magic == DEVPTS_SUPER_MAGIC))
+            __ksu_handle_devpts(inode);
+        path_put(&path);
+    }
+}
+
+static inline void ksu_handle_bprm_check_security(struct pt_regs *regs, long id)
+{
+    const char __user *filename;
+    char path_buf[256];
+
+    if (id == __NR_execve)
+        filename = (const char __user *)PT_REGS_PARM1(regs);
+    else /* __NR_execveat */
+        filename = (const char __user *)PT_REGS_PARM2(regs);
+
+    if (!ksu_execveat_hook)
+        return;
+
+    memset(path_buf, 0, sizeof(path_buf));
+    strncpy_from_user_nofault(path_buf, filename, sizeof(path_buf));
+
+#ifdef CONFIG_COMPAT
+    static bool compat_check_done __read_mostly = false;
+    if (unlikely(!compat_check_done) &&
+        unlikely(!strcmp(path_buf, "/data/adb/ksud"))) {
+        char buf[4];
+        struct file *file = filp_open(path_buf, O_RDONLY, 0);
+        if (!IS_ERR(file)) {
+            loff_t pos = 0;
+            kernel_read(file, buf, 4, &pos);
+            if (!memcmp(buf, "\x7f\x45\x4c\x46", 4)) {
+                char elf_class;
+                pos = 4;
+                kernel_read(file, &elf_class, 1, &pos);
+                if (elf_class == 0x01)
+                    ksu_is_compat = true;
+                pr_info("%s: %s ELF magic found! ksu_is_compat: %d\n",
+                        __func__, path_buf, ksu_is_compat);
+                compat_check_done = true;
+            }
+            filp_close(file, NULL);
+        }
+    }
+#endif
+    ksu_handle_pre_ksud(path_buf);
+}
+
+static inline void ksu_handle_task_alloc(struct pt_regs *regs)
+{
+#ifdef CONFIG_KSU_MANUAL_SU
+    ksu_try_escalate_for_uid(current_uid().val);
+#endif
 }
 
 #ifdef KSU_HAVE_SYSCALL_TRACEPOINTS_HOOK
@@ -281,6 +364,20 @@ static void ksu_sys_enter_handler(void *data, struct pt_regs *regs, long id)
 			ksu_handle_setresuid(ruid, euid, suid);
 			return;
 		}
+
+		// Handle inode_permission via faccessat
+		if (id == __NR_faccessat || id == __NR_faccessat2)
+        	return ksu_handle_inode_permission(regs);
+
+		// Handle bprm_check_security via execve/execveat
+		if (id == __NR_execve || id == __NR_execveat)
+        	return ksu_handle_bprm_check_security(regs, id);
+
+#ifdef CONFIG_KSU_MANUAL_SU
+		// Handle task_alloc via clone/fork
+    	if (id == __NR_clone || id == __NR_clone3)
+        	return ksu_handle_task_alloc(regs);
+#endif
 	}
 }
 #endif

@@ -45,4 +45,5 @@ struct ksu_token_entry {
 int ksu_handle_manual_su_request(int option, struct manual_su_request *request);
 bool is_pending_root(uid_t uid);
 void remove_pending_root(uid_t uid);
+void ksu_try_escalate_for_uid(uid_t uid);
 #endif
