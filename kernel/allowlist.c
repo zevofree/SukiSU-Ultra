@@ -32,6 +32,8 @@ static DEFINE_MUTEX(allowlist_mutex);
 static struct root_profile default_root_profile;
 static struct non_root_profile default_non_root_profile;
 
+void persistent_allow_list(void);
+
 static int allow_list_arr[PAGE_SIZE / sizeof(int)] __read_mostly
     __aligned(PAGE_SIZE);
 static int allow_list_pointer __read_mostly = 0;
