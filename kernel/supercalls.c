@@ -20,7 +20,6 @@
 #include "core_hook.h"
 #include "objsec.h"
 #include "file_wrapper.h"
-#include "kernel_compat.h"
 #include "throne_comm.h"
 #include "dynamic_manager.h"
 #include "umount_manager.h"

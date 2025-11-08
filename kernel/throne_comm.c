@@ -7,7 +7,6 @@
 
 #include "klog.h"
 #include "throne_comm.h"
-#include "kernel_compat.h"
 #include "ksu.h"
 
 #define PROC_UID_SCANNER "ksu_uid_scanner"

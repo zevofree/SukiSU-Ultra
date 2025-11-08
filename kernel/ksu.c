@@ -7,7 +7,6 @@
 
 #include "allowlist.h"
 #include "arch.h"
-#include "kernel_compat.h"
 #include "core_hook.h"
 #include "feature.h"
 #include "klog.h" // IWYU pragma: keep
