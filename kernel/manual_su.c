@@ -6,6 +6,7 @@
 #include <linux/uaccess.h>
 #include <linux/file.h>
 #include <linux/mm.h>
+#include <linux/slab.h>
 #include <linux/binfmts.h>
 #include "manual_su.h"
 #include "ksu.h"
