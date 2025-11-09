@@ -322,6 +322,11 @@ fun installBoot(
 
     // if boot uri is empty, it is direct install, when success, we should show reboot button
     onFinish(bootUri == null && result.isSuccess, result.code)
+
+    if (bootUri == null && result.isSuccess) {
+        install()
+    }
+
     return result.isSuccess
 }
 
