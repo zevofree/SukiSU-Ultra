@@ -127,7 +127,7 @@ endif
 
 ifeq ($(CONFIG_KSU_MANUAL_HOOK), y)
 ccflags-y += -DKSU_MANUAL_HOOK
-$(info -- SukiSU: KSU_MANUAL_HOOK)
+$(info -- SukiSU: KSU_MANUAL_HOOK Temporarily discontinued）)
 else
 ccflags-y += -DKSU_KPROBES_HOOK
 ccflags-y += -DKSU_TP_HOOK

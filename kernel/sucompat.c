@@ -74,12 +74,6 @@ int ksu_handle_faccessat(int *dfd, const char __user **filename_user, int *mode,
 {
     const char su[] = SU_PATH;
 
-#ifdef KSU_MANUAL_HOOK
-    if (!ksu_su_compat_enabled) {
-        return 0;
-    }
-#endif
-
     if (!ksu_is_allow_uid_for_current(current_uid().val)) {
         return 0;
     }
@@ -104,11 +98,6 @@ int ksu_handle_stat(int *dfd, const char __user **filename_user, int *flags)
     // const char sh[] = SH_PATH;
     const char su[] = SU_PATH;
 
-#ifdef KSU_MANUAL_HOOK
-    if (!ksu_su_compat_enabled) {
-        return 0;
-    }
-#endif
     if (!ksu_is_allow_uid_for_current(current_uid().val)) {
         return 0;
     }
@@ -154,11 +143,6 @@ int ksu_handle_execve_sucompat(const char __user **filename_user,
     const char su[] = SU_PATH;
     char path[sizeof(su) + 1];
 
-#ifdef KSU_MANUAL_HOOK
-    if (!ksu_su_compat_enabled){
-        return 0;
-    }
-#endif
     if (unlikely(!filename_user))
         return 0;
 
@@ -192,12 +176,6 @@ int ksu_handle_execve_sucompat(const char __user **filename_user,
 
 int __ksu_handle_devpts(struct inode *inode)
 {
-
-#ifdef KSU_MANUAL_HOOK
-    if (!ksu_su_compat_enabled)
-        return 0;
-#endif
-
     if (!current->mm) {
         return 0;
     }
