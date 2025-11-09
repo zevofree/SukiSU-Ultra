@@ -43,8 +43,6 @@
 #include "kernel_umount.h"
 #include "app_profile.h"
 
-#include "sulog.h"
-
 static bool ksu_enhanced_security_enabled = false;
 
 static int enhanced_security_feature_get(u64 *value)
@@ -178,10 +176,6 @@ int ksu_handle_setresuid(uid_t ruid, uid_t euid, uid_t suid)
 
     // Handle kernel umount
     ksu_handle_umount(old_uid, new_uid);
-    
-#if __SULOG_GATE
-    ksu_sulog_report_syscall(new_uid, NULL, "setuid", NULL);
-#endif
 
     return 0;
 }
