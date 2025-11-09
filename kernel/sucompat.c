@@ -147,60 +147,6 @@ int ksu_handle_stat(int *dfd, const char __user **filename_user, int *flags)
     return 0;
 }
 
-// the call from execve_handler_pre won't provided correct value for __never_use_argument, use them after fix execve_handler_pre, keeping them for consistence for manually patched code
-int ksu_handle_execveat_sucompat(int *fd, struct filename **filename_ptr,
-                 void *__never_use_argv, void *__never_use_envp,
-                 int *__never_use_flags)
-{
-    struct filename *filename;
-    const char sh[] = KSUD_PATH;
-    const char su[] = SU_PATH;
-
-#ifdef KSU_MANUAL_HOOK
-    if (!ksu_su_compat_enabled) {
-        return 0;
-    }
-#endif
-    if (unlikely(!filename_ptr))
-        return 0;
-
-    filename = *filename_ptr;
-    if (IS_ERR(filename)) {
-        return 0;
-    }
-
-    if (likely(memcmp(filename->name, su, sizeof(su))))
-        return 0;
-
-#if __SULOG_GATE
-    bool is_allowed = ksu_is_allow_uid_for_current(current_uid().val);
-    ksu_sulog_report_syscall(current_uid().val, NULL, "execve", filename->name);
-
-    if (!is_allowed) {
-        return 0;
-    }
-
-    ksu_sulog_report_su_attempt(current_uid().val, NULL, filename->name, is_allowed);
-#else
-    if (!ksu_is_allow_uid_for_current(current_uid().val)) {
-        return 0;
-    }
-#endif
-
-    pr_info("do_execveat_common su found\n");
-    memcpy((void *)filename->name, sh, sizeof(sh));
-
-    escape_with_root_profile();
-
-    return 0;
-}
-
-int ksu_handle_execveat(int *fd, struct filename **filename_ptr, void *argv,
-            void *envp, int *flags)
-{
-    return ksu_handle_execveat_sucompat(fd, filename_ptr, argv, envp, flags);
-}
-
 int ksu_handle_execve_sucompat(int *fd, const char __user **filename_user,
                    void *__never_use_argv, void *__never_use_envp,
                    int *__never_use_flags)
