@@ -135,8 +135,6 @@ int ksu_handle_umount(uid_t old_uid, uid_t new_uid)
 
     if (!ksu_uid_should_umount(new_uid)) {
         return 0;
-    } else {
-        pr_info("uid: %d should not umount!\n", current_uid().val);
     }
 
     // check old process's selinux context, if it is not zygote, ignore it!
