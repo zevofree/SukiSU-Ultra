@@ -9,6 +9,7 @@
 #include <linux/slab.h>
 #include <linux/uaccess.h>
 #include <linux/version.h>
+#include <linux/kprobes.h>
 
 #include "arch.h"
 #include "allowlist.h"
@@ -498,13 +499,12 @@ static int do_get_full_version(void __user *arg)
 static int do_get_hook_type(void __user *arg)
 {
     struct ksu_hook_type_cmd cmd = {0};
-    const char *type = "Unknown";
+    const char *type = "Tracepoint";
 
-#if defined(KSU_HAVE_SYSCALL_TRACEPOINTS_HOOK)
-    type = "Tracepoint";
-#elif defined(KSU_MANUAL_HOOK)
+#if defined(KSU_MANUAL_HOOK)
     type = "Manual";
 #endif
+
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 13, 0)
     strscpy(cmd.hook_type, type, sizeof(cmd.hook_type));
 #else
@@ -768,6 +768,7 @@ int ksu_handle_sys_reboot(int magic1, int magic2, unsigned int cmd, void __user 
     return 0;
 }
 
+#ifdef KSU_KPROBES_HOOK
 // Reboot hook for installing fd
 static int reboot_handler_pre(struct kprobe *p, struct pt_regs *regs)
 {
@@ -784,6 +785,7 @@ static struct kprobe reboot_kp = {
     .symbol_name = REBOOT_SYMBOL,
     .pre_handler = reboot_handler_pre,
 };
+#endif
 
 void ksu_supercalls_init(void)
 {
@@ -793,17 +795,20 @@ void ksu_supercalls_init(void)
     for (i = 0; ksu_ioctl_handlers[i].handler; i++) {
         pr_info("  %-18s = 0x%08x\n", ksu_ioctl_handlers[i].name, ksu_ioctl_handlers[i].cmd);
     }
-
+#ifdef KSU_KPROBES_HOOK
     int rc = register_kprobe(&reboot_kp);
     if (rc) {
         pr_err("reboot kprobe failed: %d\n", rc);
     } else {
         pr_info("reboot kprobe registered successfully\n");
     }
+#endif
 }
 
-void ksu_supercalls_exit(void){
+void ksu_supercalls_exit(void) {
+#ifdef KSU_KPROBES_HOOK
     unregister_kprobe(&reboot_kp);
+#endif
 }
 
 static inline void ksu_ioctl_audit(unsigned int cmd, const char *cmd_name, uid_t uid, int ret)

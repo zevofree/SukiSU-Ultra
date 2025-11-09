@@ -320,7 +320,7 @@ static inline void ksu_handle_task_alloc(struct pt_regs *regs)
 static void ksu_sys_enter_handler(void *data, struct pt_regs *regs, long id)
 {
 	if (unlikely(check_syscall_fastpath(id))) {
-#ifdef KSU_LKM_MODE
+#ifdef KSU_TP_HOOK
 		if (ksu_su_compat_enabled) {
 			// Handle newfstatat
 			if (id == __NR_newfstatat) {

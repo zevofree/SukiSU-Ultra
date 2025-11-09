@@ -74,7 +74,7 @@ int ksu_handle_faccessat(int *dfd, const char __user **filename_user, int *mode,
 {
     const char su[] = SU_PATH;
 
-#ifndef KSU_HAVE_SYSCALL_TRACEPOINTS_HOOK
+#ifdef KSU_MANUAL_HOOK
     if (!ksu_su_compat_enabled) {
         return 0;
     }
@@ -104,10 +104,10 @@ int ksu_handle_stat(int *dfd, const char __user **filename_user, int *flags)
     // const char sh[] = SH_PATH;
     const char su[] = SU_PATH;
 
-#ifndef KSU_HAVE_SYSCALL_TRACEPOINTS_HOOK
+#ifdef KSU_MANUAL_HOOK
     if (!ksu_su_compat_enabled) {
-         return 0;
-     }
+        return 0;
+    }
 #endif
     if (!ksu_is_allow_uid_for_current(current_uid().val)) {
         return 0;
@@ -156,10 +156,10 @@ int ksu_handle_execveat_sucompat(int *fd, struct filename **filename_ptr,
     const char sh[] = KSUD_PATH;
     const char su[] = SU_PATH;
 
-#ifndef KSU_HAVE_SYSCALL_TRACEPOINTS_HOOK
+#ifdef KSU_MANUAL_HOOK
     if (!ksu_su_compat_enabled) {
-         return 0;
-     }
+        return 0;
+    }
 #endif
     if (unlikely(!filename_ptr))
         return 0;
@@ -208,10 +208,10 @@ int ksu_handle_execve_sucompat(int *fd, const char __user **filename_user,
     const char su[] = SU_PATH;
     char path[sizeof(su) + 1];
 
-#ifndef KSU_HAVE_SYSCALL_TRACEPOINTS_HOOK
+#ifdef KSU_MANUAL_HOOK
     if (!ksu_su_compat_enabled){
-         return 0;
-     }
+        return 0;
+    }
 #endif
     if (unlikely(!filename_user))
         return 0;
@@ -247,7 +247,7 @@ int ksu_handle_execve_sucompat(int *fd, const char __user **filename_user,
 int __ksu_handle_devpts(struct inode *inode)
 {
 
-#ifndef KSU_HAVE_SYSCALL_TRACEPOINTS_HOOK
+#ifdef KSU_MANUAL_HOOK
     if (!ksu_su_compat_enabled)
         return 0;
 #endif
