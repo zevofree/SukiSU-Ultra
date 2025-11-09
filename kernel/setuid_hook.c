@@ -136,43 +136,47 @@ int ksu_handle_setresuid(uid_t ruid, uid_t euid, uid_t suid)
     }
 
     // if on private space, see if its possibly the manager
-    if (unlikely(new_uid > 100000 && new_uid % 100000 == ksu_get_manager_uid())) {
+    if (new_uid > 100000 && new_uid % 100000 == ksu_get_manager_uid()) {
          ksu_set_manager_uid(new_uid);
     }
 
-    if (unlikely(ksu_get_manager_uid() == new_uid)) {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0)
+    if (ksu_get_manager_uid() == new_uid) {
         pr_info("install fd for manager: %d\n", new_uid);
         ksu_install_fd();
         spin_lock_irq(&current->sighand->siglock);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 2) // Android backport this feature in 5.10.2
         ksu_seccomp_allow_cache(current->seccomp.filter, __NR_reboot);
-#else
-        // we dont have those new fancy things upstream has
-	    // lets just do original thing where we disable seccomp
-        disable_seccomp();
-#endif
         ksu_set_task_tracepoint_flag(current);
         spin_unlock_irq(&current->sighand->siglock);
         return 0;
     }
 
-    if (unlikely(ksu_is_allow_uid_for_current(new_uid))) {
+    if (ksu_is_allow_uid_for_current(new_uid)) {
         if (current->seccomp.mode == SECCOMP_MODE_FILTER &&
             current->seccomp.filter) {
             spin_lock_irq(&current->sighand->siglock);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 2) // Android backport this feature in 5.10.2
             ksu_seccomp_allow_cache(current->seccomp.filter, __NR_reboot);
-#else
-            // we don't have those new fancy things upstream has
-            // lets just do original thing where we disable seccomp
-            disable_seccomp();
-#endif
             spin_unlock_irq(&current->sighand->siglock);
         }
         ksu_set_task_tracepoint_flag(current);
     } else {
         ksu_clear_task_tracepoint_flag(current);
     }
+#else
+    if (ksu_is_allow_uid_for_current(new_uid)) {
+		spin_lock_irq(&current->sighand->siglock);
+		disable_seccomp(current);
+		spin_unlock_irq(&current->sighand->siglock);
+
+		if (ksu_get_manager_uid() == new_uid) {
+			pr_info("install fd for ksu manager(uid=%d)\n",
+				new_uid);
+			ksu_install_fd();
+		}
+
+		return 0;
+	}
+#endif
 
     // Handle kernel umount
     ksu_handle_umount(old_uid, new_uid);
