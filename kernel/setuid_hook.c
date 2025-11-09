@@ -41,6 +41,7 @@
 #include "supercalls.h"
 #include "syscall_hook_manager.h"
 #include "kernel_umount.h"
+#include "app_profile.h"
 
 #include "sulog.h"
 

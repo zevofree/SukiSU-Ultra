@@ -62,7 +62,7 @@ static void setup_groups(struct root_profile *profile, struct cred *cred)
     put_group_info(group_info);
 }
 
-static void disable_seccomp()
+void disable_seccomp(void)
 {
     assert_spin_locked(&current->sighand->siglock);
     // disable seccomp

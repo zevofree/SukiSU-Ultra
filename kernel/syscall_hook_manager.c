@@ -399,7 +399,7 @@ void ksu_syscall_hook_manager_init(void)
 #ifdef CONFIG_HAVE_SYSCALL_TRACEPOINTS
 	ret = register_trace_sys_enter(ksu_sys_enter_handler, NULL);
 #ifndef CONFIG_KRETPROBES
-	unmark_all_process();
+	ksu_unmark_all_process();
 	ksu_mark_running_process();
 #endif
 	if (ret) {
