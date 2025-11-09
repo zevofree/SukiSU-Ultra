@@ -7,6 +7,7 @@ import android.net.Uri
 import androidx.documentfile.provider.DocumentFile
 import com.sukisu.ultra.R
 import com.sukisu.ultra.network.RemoteToolsDownloader
+import com.sukisu.ultra.ui.util.install
 import com.sukisu.ultra.ui.util.rootAvailable
 import com.sukisu.ultra.utils.AssetsUtil
 import com.topjohnwu.superuser.Shell
@@ -169,6 +170,12 @@ class HorizonKernelWorker(
                 state.updateStep(context.getString(R.string.horizon_restoring_original_slot))
                 state.updateProgress(0.8f)
                 runCommand(true, "resetprop ro.boot.slot_suffix $originalSlot")
+            }
+
+            try {
+                install()
+            } catch (e: Exception) {
+                state.updateStep("ksud update skipped: ${e.message}")
             }
 
             state.updateStep(context.getString(R.string.horizon_flash_complete_status))
