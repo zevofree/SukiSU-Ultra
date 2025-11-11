@@ -248,7 +248,12 @@ private fun AppProfileInner(
                             ProfileBox(mode, true) {
                                 // template mode shouldn't change profile here!
                                 if (it == Mode.Default || it == Mode.Custom) {
-                                    onProfileChange(profile.copy(rootUseDefault = it == Mode.Default))
+                                    onProfileChange(
+                                        profile.copy(
+                                            rootUseDefault = it == Mode.Default,
+                                            rootTemplate = null
+                                        )
+                                    )
                                 }
                                 mode = it
                             }
@@ -479,7 +484,10 @@ private fun ProfileBox(
 
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
-private fun AppMenuBox(packageName: String, content: @Composable () -> Unit) {
+private fun AppMenuBox(
+    packageName: String,
+    content: @Composable () -> Unit
+) {
     var expanded by remember { mutableStateOf(false) }
     var touchPoint: Offset by remember { mutableStateOf(Offset.Zero) }
     val density = LocalDensity.current
@@ -499,15 +507,15 @@ private fun AppMenuBox(packageName: String, content: @Composable () -> Unit) {
         content()
 
         val (offsetX, offsetY) = with(density) {
-            (touchPoint.x.toDp()) to (touchPoint.y.toDp())
+            (touchPoint.x.toDp()) to (-touchPoint.y.toDp())
         }
 
         DropdownMenu(
             expanded = expanded,
-            offset = DpOffset(offsetX, -offsetY),
+            offset = DpOffset(offsetX, offsetY),
             onDismissRequest = {
                 expanded = false
-            },
+            }
         ) {
             AppMenuOption(
                 text = stringResource(id = R.string.launch_app),
