@@ -707,7 +707,7 @@ suspend fun getModuleNameFromUri(context: Context, uri: Uri): String {
 
 @Parcelize
 sealed class FlashIt : Parcelable {
-    data class FlashBoot(val boot: Uri? = null, val lkm: LkmSelection, val ota: Boolean) : FlashIt()
+    data class FlashBoot(val boot: Uri? = null, val lkm: LkmSelection, val ota: Boolean, val partition: String? = null) : FlashIt()
     data class FlashModule(val uri: Uri) : FlashIt()
     data class FlashModules(val uris: List<Uri>, val currentIndex: Int = 0) : FlashIt()
     data class FlashModuleUpdate(val uri: Uri) : FlashIt() // 模块更新
@@ -736,6 +736,7 @@ fun flashIt(
             flashIt.boot,
             flashIt.lkm,
             flashIt.ota,
+            flashIt.partition,
             onFinish,
             onStdout,
             onStderr

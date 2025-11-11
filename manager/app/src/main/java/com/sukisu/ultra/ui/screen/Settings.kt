@@ -150,7 +150,7 @@ fun SettingScreen(navigator: DestinationsNavigator) {
                                 }
                             )
                         }
-                        SettingDropdown(
+                        SuperDropdown(
                             icon = Icons.Rounded.EnhancedEncryption,
                             title = stringResource(id = R.string.settings_enable_enhanced_security),
                             summary = stringResource(id = R.string.settings_enable_enhanced_security_summary),
@@ -193,7 +193,7 @@ fun SettingScreen(navigator: DestinationsNavigator) {
                                 }
                             )
                         }
-                        SettingDropdown(
+                        SuperDropdown(
                             icon = Icons.Rounded.RemoveModerator,
                             title = stringResource(id = R.string.settings_disable_su),
                             summary = stringResource(id = R.string.settings_disable_su_summary),
@@ -236,7 +236,7 @@ fun SettingScreen(navigator: DestinationsNavigator) {
                                 }
                             )
                         }
-                        SettingDropdown(
+                        SuperDropdown(
                             icon = Icons.Rounded.RemoveCircle,
                             title = stringResource(id = R.string.settings_disable_kernel_umount),
                             summary = stringResource(id = R.string.settings_disable_kernel_umount_summary),
@@ -1072,106 +1072,6 @@ private fun UidScannerSection(
                             )
                         }
                     }
-                }
-            }
-        )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun SettingDropdown(
-    icon: ImageVector,
-    title: String,
-    summary: String,
-    items: List<String>,
-    selectedIndex: Int,
-    leftAction: (@Composable () -> Unit)? = null,
-    onSelectedIndexChange: (Int) -> Unit
-) {
-    var showDialog by remember { mutableStateOf(false) }
-    val selectedItemText = items.getOrNull(selectedIndex) ?: ""
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { showDialog = true }
-            .padding(horizontal = SPACING_LARGE, vertical = 12.dp),
-        verticalAlignment = Alignment.Top
-    ) {
-        if (leftAction != null) {
-            leftAction()
-        } else {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier
-                    .padding(end = SPACING_LARGE)
-                    .size(24.dp)
-            )
-        }
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium
-            )
-            Spacer(modifier = Modifier.height(SPACING_SMALL))
-            Text(
-                text = summary,
-                style = MaterialTheme.typography.bodyMedium
-            )
-            Spacer(modifier = Modifier.height(SPACING_SMALL))
-            Text(
-                text = selectedItemText,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-
-        Icon(
-            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(24.dp)
-        )
-    }
-
-    if (showDialog) {
-        AlertDialog(
-            onDismissRequest = { showDialog = false },
-            title = { Text(text = title) },
-            text = {
-                LazyColumn(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(items.size) { index ->
-                        val item = items[index]
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    onSelectedIndexChange(index)
-                                    showDialog = false
-                                }
-                                .padding(vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            RadioButton(
-                                selected = selectedIndex == index,
-                                onClick = null
-                            )
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Text(text = item)
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showDialog = false }) {
-                    Text(text = stringResource(android.R.string.cancel))
                 }
             }
         )

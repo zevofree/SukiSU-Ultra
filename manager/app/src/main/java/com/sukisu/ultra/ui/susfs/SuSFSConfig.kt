@@ -1573,7 +1573,9 @@ private fun BasicSettingsContent(
     onEnableAvcLogSpoofingChange: (Boolean) -> Unit
 ) {
     var scriptLocationExpanded by remember { mutableStateOf(false) }
-    val isAbDevice = isAbDevice()
+    val isAbDevice = produceState(initialValue = false) {
+        value = isAbDevice()
+    }.value
     val isSusVersion159 = isSusVersion159()
 
     Column(
@@ -2063,7 +2065,9 @@ private fun SlotInfoDialog(
     onUseUname: (String) -> Unit,
     onUseBuildTime: (String) -> Unit
 ) {
-    val isAbDevice = isAbDevice()
+    val isAbDevice = produceState(initialValue = false) {
+        value = isAbDevice()
+    }.value
 
     if (showDialog && isAbDevice) {
         AlertDialog(
