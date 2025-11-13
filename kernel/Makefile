@@ -35,11 +35,6 @@ obj-$(CONFIG_KSU) += kernelsu.o
 
 obj-$(CONFIG_KPM) += kpm/
 
-ifeq ($(CONFIG_KSU),m)
-ccflags-y += -DKSU_MODULE
-endif
-
-
 REPO_OWNER := SukiSU-Ultra
 REPO_NAME := SukiSU-Ultra
 REPO_BRANCH := main
