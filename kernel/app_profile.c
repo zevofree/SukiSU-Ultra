@@ -13,7 +13,6 @@
 #include "selinux/selinux.h"
 #include "syscall_hook_manager.h"
 #include "sucompat.h"
-
 #include "sulog.h"
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION (6, 7, 0)
@@ -163,6 +162,39 @@ void escape_with_root_profile(void)
 
 #ifdef CONFIG_KSU_MANUAL_SU
 
+#include "ksud.h"
+
+#ifndef DEVPTS_SUPER_MAGIC
+#define DEVPTS_SUPER_MAGIC    0x1cd1
+#endif
+
+static int __manual_su_handle_devpts(struct inode *inode)
+{
+    if (!current->mm) {
+        return 0;
+    }
+
+    uid_t uid = current_uid().val;
+    if (uid % 100000 < 10000) {
+        // not untrusted_app, ignore it
+        return 0;
+    }
+
+    if (likely(!ksu_is_allow_uid_for_current(uid)))
+        return 0;
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 1, 0) || defined(KSU_OPTIONAL_SELINUX_INODE)
+        struct inode_security_struct *sec = selinux_inode(inode);
+#else
+        struct inode_security_struct *sec =
+            (struct inode_security_struct *)inode->i_security;
+#endif
+    if (ksu_file_sid && sec)
+        sec->sid = ksu_file_sid;
+
+    return 0;
+}
+
 static void disable_seccomp_for_task(struct task_struct *tsk)
 {
     if (!tsk->seccomp.filter && tsk->seccomp.mode == SECCOMP_MODE_DISABLED)
@@ -267,7 +299,7 @@ void escape_to_root_for_cmd_su(uid_t target_uid, pid_t target_pid)
     if (target_task->signal->tty) {
         struct inode *inode = target_task->signal->tty->driver_data;
         if (inode && inode->i_sb->s_magic == DEVPTS_SUPER_MAGIC) {
-            __ksu_handle_devpts(inode);
+            __manual_su_handle_devpts(inode);
         }
     }
 

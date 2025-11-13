@@ -2,6 +2,7 @@
 #define __KSU_H_APP_PROFILE
 
 #include <linux/types.h>
+#include "objsec.h"
 
 // Forward declarations
 struct cred;

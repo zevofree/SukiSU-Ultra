@@ -11,12 +11,6 @@
 #include "selinux/selinux.h"
 #include "objsec.h"
 
-#ifndef DEVPTS_SUPER_MAGIC
-#define DEVPTS_SUPER_MAGIC    0x1cd1
-#endif
-
-extern int __ksu_handle_devpts(struct inode *inode); // sucompat.c
-
 // Hook manager initialization and cleanup
 void ksu_syscall_hook_manager_init(void);
 void ksu_syscall_hook_manager_exit(void);
