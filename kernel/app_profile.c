@@ -6,6 +6,7 @@
 #include <linux/thread_info.h>
 #include <linux/uidgid.h>
 #include <linux/version.h>
+#include "objsec.h"
 
 #include "allowlist.h"
 #include "app_profile.h"
