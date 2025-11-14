@@ -8,13 +8,30 @@
 #define __SULOG_GATE 1
 
 #if __SULOG_GATE
+
 extern struct timezone sys_tz;
 
 #define SULOG_PATH "/data/adb/ksu/log/sulog.log"
 #define SULOG_MAX_SIZE (128 * 1024 * 1024) // 128MB
 #define SULOG_ENTRY_MAX_LEN 512
 #define SULOG_COMM_LEN 256
-#define DEDUP_SECS     10
+#define DEDUP_SECS 10
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0)
+static inline size_t strlcpy(char *dest, const char *src, size_t size)
+{
+    return strscpy(dest, src, size);
+}
+#endif
+
+#define KSU_STRSCPY(dst, src, size) \
+    do { \
+        if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 13, 0)) { \
+            strscpy(dst, src, size); \
+        } else { \
+            strlcpy(dst, src, size); \
+        } \
+    } while (0)
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0)
 #include <linux/rtc.h>
@@ -24,25 +41,25 @@ static inline void time64_to_tm(time64_t totalsecs, int offset, struct tm *resul
     struct rtc_time rtc_tm;
     rtc_time64_to_tm(totalsecs, &rtc_tm);
 
-    result->tm_sec  = rtc_tm.tm_sec;
-    result->tm_min  = rtc_tm.tm_min;
+    result->tm_sec = rtc_tm.tm_sec;
+    result->tm_min = rtc_tm.tm_min;
     result->tm_hour = rtc_tm.tm_hour;
     result->tm_mday = rtc_tm.tm_mday;
-    result->tm_mon  = rtc_tm.tm_mon;
+    result->tm_mon = rtc_tm.tm_mon;
     result->tm_year = rtc_tm.tm_year;
 }
 #endif
 
 struct dedup_key {
-    u32     crc;
-    uid_t   uid;
-    u8      type;
-    u8      _pad[1];
+    u32 crc;
+    uid_t uid;
+    u8 type;
+    u8 _pad[1];
 };
 
 struct dedup_entry {
     struct dedup_key key;
-    u64     ts_ns;
+    u64 ts_ns;
 };
 
 enum {
