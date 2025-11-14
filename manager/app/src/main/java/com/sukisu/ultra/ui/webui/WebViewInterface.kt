@@ -1,17 +1,20 @@
 package com.sukisu.ultra.ui.webui
 
 import android.app.Activity
+import android.content.pm.ApplicationInfo
 import android.os.Handler
 import android.os.Looper
 import android.text.TextUtils
 import android.view.Window
 import android.webkit.JavascriptInterface
 import android.widget.Toast
+import androidx.core.content.pm.PackageInfoCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.dergoogler.mmrl.webui.interfaces.WXInterface
 import com.dergoogler.mmrl.webui.interfaces.WXOptions
 import com.dergoogler.mmrl.webui.model.JavaScriptInterface
+import com.sukisu.ultra.ui.viewmodel.SuperUserViewModel
 import com.sukisu.ultra.ui.util.*
 import com.topjohnwu.superuser.CallbackList
 import com.topjohnwu.superuser.ShellUtils
@@ -138,7 +141,7 @@ class WebViewInterface(
 
         completableFuture.thenAccept { result ->
             val emitExitCode =
-                "(function() { try { ${callbackFunc}.emit('exit', ${result.code}); } catch(e) { console.error(`emitExit error: \${e}`); } })();"
+                $$"(function() { try { $${callbackFunc}.emit('exit', $${result.code}); } catch(e) { console.error(`emitExit error: ${e}`); } })();"
             webView.post {
                 webView.evaluateJavascript(emitExitCode, null)
             }
@@ -201,6 +204,56 @@ class WebViewInterface(
             break
         }
         return currentModuleInfo.toString()
+    }
+
+    @JavascriptInterface
+    fun listPackages(type: String): String {
+        val packageNames = SuperUserViewModel.apps
+            .filter { appInfo ->
+                val flags = appInfo.packageInfo.applicationInfo?.flags ?: 0
+                when (type.lowercase()) {
+                    "system" -> (flags and ApplicationInfo.FLAG_SYSTEM) != 0
+                    "user" -> (flags and ApplicationInfo.FLAG_SYSTEM) == 0
+                    else -> true
+                }
+            }
+            .map { it.packageName }
+            .sorted()
+
+        val jsonArray = JSONArray()
+        for (pkgName in packageNames) {
+            jsonArray.put(pkgName)
+        }
+        return jsonArray.toString()
+    }
+
+    @JavascriptInterface
+    fun getPackagesInfo(packageNamesJson: String): String {
+        val packageNames = JSONArray(packageNamesJson)
+        val jsonArray = JSONArray()
+        val appMap = SuperUserViewModel.apps.associateBy { it.packageName }
+        for (i in 0 until packageNames.length()) {
+            val pkgName = packageNames.getString(i)
+            val appInfo = appMap[pkgName]
+            if (appInfo != null) {
+                val pkg = appInfo.packageInfo
+                val app = pkg.applicationInfo
+                val obj = JSONObject()
+                obj.put("packageName", pkg.packageName)
+                obj.put("versionName", pkg.versionName ?: "")
+                obj.put("versionCode", PackageInfoCompat.getLongVersionCode(pkg))
+                obj.put("appLabel", appInfo.label)
+                obj.put("isSystem", if (app != null) ((app.flags and ApplicationInfo.FLAG_SYSTEM) != 0) else JSONObject.NULL)
+                obj.put("uid", app?.uid ?: JSONObject.NULL)
+                jsonArray.put(obj)
+            } else {
+                val obj = JSONObject()
+                obj.put("packageName", pkgName)
+                obj.put("error", "Package not found or inaccessible")
+                jsonArray.put(obj)
+            }
+        }
+        return jsonArray.toString()
     }
 
     // =================== KPM支持 =============================

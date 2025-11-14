@@ -2,6 +2,13 @@ package com.sukisu.ultra
 
 import android.app.Application
 import android.system.Os
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.ViewModelStoreOwner
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import com.sukisu.ultra.ui.viewmodel.SuperUserViewModel
 import coil.Coil
 import coil.ImageLoader
 import com.dergoogler.mmrl.platform.Platform
@@ -14,13 +21,20 @@ import java.util.Locale
 
 lateinit var ksuApp: KernelSUApplication
 
-class KernelSUApplication : Application() {
+class KernelSUApplication : Application(), ViewModelStoreOwner {
 
     lateinit var okhttpClient: OkHttpClient
+    private val appViewModelStore by lazy { ViewModelStore() }
 
     override fun onCreate() {
         super.onCreate()
         ksuApp = this
+
+        // For faster response when first entering superuser or webui activity
+        val superUserViewModel = ViewModelProvider(this)[SuperUserViewModel::class.java]
+        CoroutineScope(Dispatchers.Main).launch {
+            superUserViewModel.fetchAppList()
+        }
 
         Platform.setHiddenApiExemptions()
 
@@ -53,4 +67,6 @@ class KernelSUApplication : Application() {
                     )
                 }.build()
     }
+    override val viewModelStore: ViewModelStore
+        get() = appViewModelStore
 }

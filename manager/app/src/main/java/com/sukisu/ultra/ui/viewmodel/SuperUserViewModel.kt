@@ -3,14 +3,13 @@ package com.sukisu.ultra.ui.viewmodel
 import android.content.*
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageInfo
+import android.graphics.drawable.Drawable
 import android.os.*
 import android.util.Log
 import androidx.compose.runtime.*
 import androidx.core.content.edit
 import androidx.lifecycle.ViewModel
 import java.io.*
-import coil.ImageLoader
-import coil.disk.DiskCache
 import com.sukisu.ultra.Natives
 import com.sukisu.ultra.ksuApp
 import com.sukisu.ultra.ui.KsuService
@@ -66,7 +65,15 @@ enum class SortType(val displayNameRes: Int, val persistKey: String) {
 class SuperUserViewModel : ViewModel() {
     companion object {
         private const val TAG = "SuperUserViewModel"
+        private val appsLock = Any()
         var apps by mutableStateOf<List<AppInfo>>(emptyList())
+
+        @JvmStatic
+        fun getAppIconDrawable(context: Context, packageName: String): Drawable? {
+            val appList = synchronized(appsLock) { apps }
+            val appDetail = appList.find { it.packageName == packageName }
+            return appDetail?.packageInfo?.applicationInfo?.loadIcon(context.packageManager)
+        }
         private const val PREFS_NAME = "settings"
         private const val KEY_SHOW_SYSTEM_APPS = "show_system_apps"
         private const val KEY_SELECTED_CATEGORY = "selected_category"
@@ -421,7 +428,7 @@ class SuperUserViewModel : ViewModel() {
     }
 
     private fun stopKsuService() {
-        serviceConnection?.let { connection ->
+        serviceConnection?.let { _ ->
             try {
                 val intent = Intent(ksuApp, KsuService::class.java)
                 com.topjohnwu.superuser.ipc.RootService.stop(intent)
@@ -464,6 +471,10 @@ class SuperUserViewModel : ViewModel() {
 
                 start += page.size
                 loadingProgress = start.toFloat() / total
+            }
+
+            synchronized(appsLock) {
+                apps
             }
 
             stopKsuService()
