@@ -136,7 +136,7 @@ int ksu_handle_setresuid(uid_t ruid, uid_t euid, uid_t suid)
 #else
     if (ksu_is_allow_uid_for_current(new_uid)) {
 		spin_lock_irq(&current->sighand->siglock);
-		disable_seccomp(current);
+		disable_seccomp();
 		spin_unlock_irq(&current->sighand->siglock);
 
 		if (ksu_get_manager_uid() == new_uid) {

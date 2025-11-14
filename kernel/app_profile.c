@@ -62,10 +62,9 @@ static void setup_groups(struct root_profile *profile, struct cred *cred)
     put_group_info(group_info);
 }
 
-void disable_seccomp(struct task_struct *tsk)
+void disable_seccomp(void)
 {
-	assert_spin_locked(&tsk->sighand->siglock);
-
+	assert_spin_locked(&current->sighand->siglock);
 	// disable seccomp
 #if defined(CONFIG_GENERIC_ENTRY) &&                                           \
 	LINUX_VERSION_CODE >= KERNEL_VERSION(5, 11, 0)
@@ -75,20 +74,10 @@ void disable_seccomp(struct task_struct *tsk)
 #endif
 
 #ifdef CONFIG_SECCOMP
-	tsk->seccomp.mode = 0;
-	if (tsk->seccomp.filter) {
-		// 5.9+ have filter_count and use seccomp_filter_release
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 9, 0)
-		seccomp_filter_release(tsk);
-		atomic_set(&tsk->seccomp.filter_count, 0);
+	current->seccomp.mode = 0;
+	current->seccomp.filter = NULL;
+	atomic_set(&current->seccomp.filter_count, 0);
 #else
-		// for 6.11+ kernel support?
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 9, 0)
-		put_seccomp_filter(tsk);
-#endif
-		tsk->seccomp.filter = NULL;
-#endif
-	}
 #endif
 }
 
@@ -148,7 +137,7 @@ void escape_with_root_profile(void)
     // Refer to kernel/seccomp.c: seccomp_set_mode_strict
     // When disabling Seccomp, ensure that current->sighand->siglock is held during the operation.
     spin_lock_irq(&current->sighand->siglock);
-    disable_seccomp(current);
+    disable_seccomp();
     spin_unlock_irq(&current->sighand->siglock);
 
     setup_selinux(profile->selinux_domain);
@@ -198,23 +187,19 @@ static int __manual_su_handle_devpts(struct inode *inode)
 
 static void disable_seccomp_for_task(struct task_struct *tsk)
 {
-    if (!tsk->seccomp.filter && tsk->seccomp.mode == SECCOMP_MODE_DISABLED)
-        return;
-
-    if (WARN_ON(!spin_is_locked(&tsk->sighand->siglock)))
-        return;
-
+    assert_spin_locked(&tsk->sighand->siglock);
 #ifdef CONFIG_SECCOMP
-    tsk->seccomp.mode = 0;
+    if (tsk->seccomp.mode == SECCOMP_MODE_DISABLED && !tsk->seccomp.filter)
+        return;
+#endif
+    clear_tsk_thread_flag(tsk, TIF_SECCOMP);
+#ifdef CONFIG_SECCOMP
+    tsk->seccomp.mode = SECCOMP_MODE_DISABLED;
     if (tsk->seccomp.filter) {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0)
         seccomp_filter_release(tsk);
-        atomic_set(&tsk->seccomp.filter_count, 0);
 #else
-    // for 6.11+ kernel support?
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 9, 0)
         put_seccomp_filter(tsk);
-#endif
         tsk->seccomp.filter = NULL;
 #endif
     }
@@ -225,6 +210,7 @@ void escape_to_root_for_cmd_su(uid_t target_uid, pid_t target_pid)
 {
     struct cred *newcreds;
     struct task_struct *target_task;
+    unsigned long flags;
     struct task_struct *p = current;
     struct task_struct *t;
 
@@ -288,9 +274,9 @@ void escape_to_root_for_cmd_su(uid_t target_uid, pid_t target_pid)
     task_unlock(target_task);
 
     if (target_task->sighand) {
-        spin_lock_irq(&target_task->sighand->siglock);
+        spin_lock_irqsave(&target_task->sighand->siglock, flags);
         disable_seccomp_for_task(target_task);
-        spin_unlock_irq(&target_task->sighand->siglock);
+        spin_unlock_irqrestore(&target_task->sighand->siglock, flags);
     }
 
     setup_selinux(profile->selinux_domain);
