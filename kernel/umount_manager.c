@@ -1,4 +1,3 @@
-#include "umount_manager.h"
 #include <linux/slab.h>
 #include <linux/string.h>
 #include <linux/uaccess.h>
@@ -6,29 +5,19 @@
 #include <linux/path.h>
 #include <linux/mount.h>
 #include <linux/cred.h>
+
 #include "klog.h"
+#include "kernel_umount.h"
+#include "umount_manager.h"
 
 static struct umount_manager g_umount_mgr = {
     .entry_count = 0,
     .max_entries = 64,
 };
 
-extern int path_umount(struct path *path, int flags);
-
-static bool check_path_busy(const char *path)
+static void try_umount_path(struct umount_entry *entry)
 {
-    struct path kpath;
-    int err;
-
-    err = kern_path(path, 0, &kpath);
-    if (err) {
-        return false;
-    }
-
-    bool busy = (kpath.mnt->mnt_root != kpath.dentry);
-    path_put(&kpath);
-
-    return busy;
+    try_umount(entry->path, entry->check_mnt, entry->flags);
 }
 
 static struct umount_entry *find_entry_locked(const char *path)
@@ -194,44 +183,6 @@ int ksu_umount_manager_remove(const char *path)
 out:
     spin_unlock_irqrestore(&g_umount_mgr.lock, flags);
     return ret;
-}
-
-bool ksu_umount_path_is_busy(const char *path)
-{
-    return check_path_busy(path);
-}
-
-static void try_umount_path(struct umount_entry *entry)
-{
-    struct path kpath;
-    int err;
-
-    err = kern_path(entry->path, 0, &kpath);
-    if (err) {
-        return;
-    }
-
-    if (kpath.dentry != kpath.mnt->mnt_root) {
-        path_put(&kpath);
-        return;
-    }
-
-    if (entry->check_mnt) {
-        if (kpath.mnt && kpath.mnt->mnt_sb && kpath.mnt->mnt_sb->s_type) {
-            const char *fstype = kpath.mnt->mnt_sb->s_type->name;
-            if (strcmp(fstype, "overlay") != 0) {
-                path_put(&kpath);
-                return;
-            }
-        }
-    }
-
-    err = path_umount(&kpath, entry->flags);
-    if (err) {
-        pr_info("umount %s failed: %d\n", entry->path, err);
-    }
-
-    path_put(&kpath);
 }
 
 void ksu_umount_manager_execute_all(const struct cred *cred)

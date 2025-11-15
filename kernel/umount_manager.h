@@ -59,7 +59,6 @@ int ksu_umount_manager_init(void);
 void ksu_umount_manager_exit(void);
 int ksu_umount_manager_add(const char *path, bool check_mnt, int flags, bool is_default);
 int ksu_umount_manager_remove(const char *path);
-bool ksu_umount_path_is_busy(const char *path);
 void ksu_umount_manager_execute_all(const struct cred *cred);
 int ksu_umount_manager_get_entries(struct ksu_umount_entry_info __user *entries, u32 *count);
 int ksu_umount_manager_clear_custom(void);
