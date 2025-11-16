@@ -17,6 +17,7 @@
 
 #include "sulog.h"
 #include "ksu.h"
+#include "feature.h"
 
 #if __SULOG_GATE
 
@@ -25,7 +26,28 @@ static DEFINE_SPINLOCK(dedup_lock);
 static LIST_HEAD(sulog_queue);
 static struct workqueue_struct *sulog_workqueue;
 static struct work_struct sulog_work;
-static bool sulog_enabled = true;
+static bool sulog_enabled __read_mostly = true;
+
+static int sulog_feature_get(u64 *value)
+{
+    *value = sulog_enabled ? 1 : 0;
+    return 0;
+}
+
+static int sulog_feature_set(u64 value)
+{
+    bool enable = value != 0;
+    sulog_enabled = enable;
+    pr_info("sulog: set to %d\n", enable);
+    return 0;
+}
+
+static const struct ksu_feature_handler sulog_handler = {
+    .feature_id = KSU_FEATURE_SULOG,
+    .name = "sulog",
+    .get_handler = sulog_feature_get,
+    .set_handler = sulog_feature_set,
+};
 
 static void get_timestamp(char *buf, size_t len)
 {
@@ -304,6 +326,10 @@ void ksu_sulog_report_syscall(uid_t uid, const char *comm, const char *syscall, 
 
 int ksu_sulog_init(void)
 {
+    if (ksu_register_feature_handler(&sulog_handler)) {
+        pr_err("Failed to register su_compat feature handler\n");
+    }
+
     sulog_workqueue = alloc_workqueue("ksu_sulog", WQ_UNBOUND | WQ_HIGHPRI, 1);
     if (!sulog_workqueue) {
         pr_err("sulog: failed to create workqueue\n");
@@ -319,6 +345,8 @@ void ksu_sulog_exit(void)
 {
     struct sulog_entry *entry, *tmp;
     unsigned long flags;
+
+    ksu_unregister_feature_handler(KSU_FEATURE_SULOG);
 
     sulog_enabled = false;
 
