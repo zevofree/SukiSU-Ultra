@@ -18,7 +18,6 @@ import com.topjohnwu.superuser.Shell
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.parcelize.Parcelize
 import java.text.Collator
 import java.util.*
 import java.util.concurrent.LinkedBlockingQueue
@@ -27,6 +26,8 @@ import java.util.concurrent.TimeUnit
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 import com.sukisu.zako.IKsuInterface
+import kotlinx.parcelize.IgnoredOnParcel
+import kotlinx.parcelize.Parcelize
 
 enum class AppCategory(val displayNameRes: Int, val persistKey: String) {
     ALL(com.sukisu.ultra.R.string.category_all_apps, "ALL"),
@@ -77,31 +78,36 @@ class SuperUserViewModel : ViewModel() {
         private const val BATCH_SIZE = 20
     }
 
+    @Immutable
     @Parcelize
     data class AppInfo(
         val label: String,
         val packageInfo: PackageInfo,
         val profile: Natives.Profile?,
     ) : Parcelable {
-        val packageName: String get() = packageInfo.packageName
-        val uid: Int get() = packageInfo.applicationInfo!!.uid
+        @IgnoredOnParcel
+        val packageName: String = packageInfo.packageName
+        @IgnoredOnParcel
+        val uid: Int = packageInfo.applicationInfo!!.uid
     }
 
+    @Immutable
     @Parcelize
     data class AppGroup(
         val uid: Int,
         val apps: List<AppInfo>,
         val profile: Natives.Profile?
     ) : Parcelable {
-        val mainApp: AppInfo get() = apps.first()
-        val packageNames: List<String> get() = apps.map { it.packageName }
-        val allowSu: Boolean get() = profile?.allowSu == true
-
-        val userName: String? get() = Natives.getUserName(uid)
-        val hasCustomProfile: Boolean
-            get() = profile?.let {
-                if (it.allowSu) !it.rootUseDefault else !it.nonRootUseDefault
-            } ?: false
+        @IgnoredOnParcel
+        val mainApp: AppInfo = apps.first()
+        @IgnoredOnParcel
+        val packageNames: List<String> = apps.map { it.packageName }
+        @IgnoredOnParcel
+        val allowSu: Boolean = profile?.allowSu == true
+        @IgnoredOnParcel
+        val userName: String? = Natives.getUserName(uid)
+        @IgnoredOnParcel
+        val hasCustomProfile : Boolean = profile?.let { if (it.allowSu) !it.rootUseDefault else !it.nonRootUseDefault } ?: false
     }
 
     private val appProcessingThreadPool = ThreadPoolExecutor(
