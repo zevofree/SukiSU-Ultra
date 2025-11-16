@@ -85,11 +85,6 @@ class SuperUserViewModel : ViewModel() {
     ) : Parcelable {
         val packageName: String get() = packageInfo.packageName
         val uid: Int get() = packageInfo.applicationInfo!!.uid
-        val allowSu: Boolean get() = profile?.allowSu == true
-        val hasCustomProfile: Boolean
-            get() = profile?.let {
-                if (it.allowSu) !it.rootUseDefault else !it.nonRootUseDefault
-            } ?: false
     }
 
     @Parcelize
@@ -171,28 +166,6 @@ class SuperUserViewModel : ViewModel() {
     fun updateCurrentSortType(newSortType: SortType) {
         currentSortType = newSortType
         prefs.edit { putString(KEY_CURRENT_SORT_TYPE, newSortType.persistKey) }
-    }
-
-    private val sortedList by derivedStateOf {
-        val comparator = compareBy<AppInfo> {
-            when {
-                it.allowSu -> 0
-                it.hasCustomProfile -> 1
-                else -> 2
-            }
-        }.then(compareBy(Collator.getInstance(Locale.getDefault()), AppInfo::label))
-        apps.sortedWith(comparator).also { isRefreshing = false }
-    }
-
-    val appList by derivedStateOf {
-        sortedList.filter {
-            it.label.contains(search, true) ||
-                    it.packageName.contains(search, true) ||
-                    HanziToPinyin.getInstance().toPinyinString(it.label).contains(search, true)
-        }.filter {
-            it.uid == 2000 || showSystemApps ||
-                    it.packageInfo.applicationInfo!!.flags.and(ApplicationInfo.FLAG_SYSTEM) == 0
-        }
     }
 
     fun toggleBatchMode() {
