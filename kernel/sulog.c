@@ -327,7 +327,7 @@ void ksu_sulog_report_syscall(uid_t uid, const char *comm, const char *syscall, 
 int ksu_sulog_init(void)
 {
     if (ksu_register_feature_handler(&sulog_handler)) {
-        pr_err("Failed to register su_compat feature handler\n");
+        pr_err("Failed to register sulog feature handler\n");
     }
 
     sulog_workqueue = alloc_workqueue("ksu_sulog", WQ_UNBOUND | WQ_HIGHPRI, 1);

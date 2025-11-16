@@ -79,6 +79,7 @@ fun SettingScreen(navigator: DestinationsNavigator) {
     val snackBarHost = LocalSnackbarHost.current
     val context = LocalContext.current
     val prefs = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
+    var isSuLogEnabled by remember { mutableStateOf(Natives.isSuLogEnabled()) }
     var selectedEngine by rememberSaveable {
         mutableStateOf(
             prefs.getString("webui_engine", "default") ?: "default"
@@ -280,7 +281,7 @@ fun SettingScreen(navigator: DestinationsNavigator) {
                             )
                         }
                         SuperDropdown(
-                            icon = Icons.Rounded.RemoveCircle,
+                            icon = Icons.Filled.NoAccounts,
                             title = stringResource(id = R.string.settings_disable_sulog),
                             summary = stringResource(id = R.string.settings_disable_sulog_summary),
                             items = modeItems,
@@ -292,6 +293,7 @@ fun SettingScreen(navigator: DestinationsNavigator) {
                                         execKsud("feature save", true)
                                         prefs.edit { putInt("kernel_sulog_mode", 0) }
                                         kernelSuLogMode = 0
+                                        isSuLogEnabled = true
                                     }
 
                                     // Temporarily disable: save enabled state first, then disable
@@ -300,6 +302,7 @@ fun SettingScreen(navigator: DestinationsNavigator) {
                                         if (Natives.setSuLogEnabled(false)) {
                                             prefs.edit { putInt("kernel_sulog_mode", 0) }
                                             kernelSuLogMode = 1
+                                            isSuLogEnabled = false
                                         }
                                     }
 
@@ -308,6 +311,7 @@ fun SettingScreen(navigator: DestinationsNavigator) {
                                         execKsud("feature save", true)
                                         prefs.edit { putInt("kernel_sulog_mode", 2) }
                                         kernelSuLogMode = 2
+                                        isSuLogEnabled = false
                                     }
                                 }
                             }
@@ -445,7 +449,7 @@ fun SettingScreen(navigator: DestinationsNavigator) {
 
                     // 查看使用日志
                     KsuIsValid {
-                        if (Natives.isSuLogEnabled()) {
+                        if (isSuLogEnabled) {
                             SettingItem(
                                 icon = Icons.Filled.Visibility,
                                 title = stringResource(R.string.log_viewer_view_logs),

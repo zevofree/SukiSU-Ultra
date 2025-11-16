@@ -761,6 +761,6 @@ Important Note:\n
     <string name="config_applied">Configuration applied to kernel</string>
     <string name="mnt_detach">MNT_DETACH</string>
     <string name="group_contains_apps">Contains %d apps</string>
-    <string name="settings_disable_sulog">Disable KernelSU superuser access logging</string>
-<string name="settings_disable_sulog_summary">Disable superuser logging functionality</string>
+    <string name="settings_disable_sulog">Disable superuser logging</string>
+    <string name="settings_disable_sulog_summary">Disable KernelSU superuser access logging</string>
 </resources>
