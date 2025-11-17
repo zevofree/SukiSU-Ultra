@@ -152,6 +152,11 @@ enum Commands {
         #[command(subcommand)]
         command: Debug,
     },
+    /// Kernel interface
+    Kernel {
+        #[command(subcommand)]
+        command: Kernel,
+    },
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -378,6 +383,15 @@ enum Feature {
     Save,
 }
 
+#[derive(clap::Subcommand, Debug)]
+enum Kernel {
+    /// Nuke ext4 sysfs
+    NukeExt4Sysfs {
+        /// mount point
+        mnt: String,
+    },
+}
+
 #[cfg(target_arch = "aarch64")]
 mod kpm_cmd {
     use clap::Subcommand;
@@ -590,6 +604,9 @@ pub fn run() -> Result<()> {
             magiskboot,
             flash,
         } => crate::boot_patch::restore(boot, magiskboot, flash),
+        Commands::Kernel { command } => match command {
+            Kernel::NukeExt4Sysfs { mnt } => ksucalls::nuke_ext4_sysfs(&mnt),
+        },
         #[cfg(target_arch = "aarch64")]
         Commands::Kpm { command } => {
             use crate::cli::kpm_cmd::Kpm;
