@@ -268,15 +268,12 @@ pub fn list_umount_paths() -> Result<()> {
         return Ok(());
     }
 
-    println!(
-        "{:<30} {:<12} {:<8} {:<10}",
-        "Path", "CheckMnt", "Flags", "Default"
-    );
+    println!("{:<30} {:<8} {:<10}", "Path", "Flags", "Default");
     println!("{}", "=".repeat(60));
 
     for entry in entries {
         println!(
-            "{:<30} {:<12} {:<8} {:<10}",
+            "{:<30} {:<8} {:<10}",
             entry.path,
             entry.flags,
             if entry.is_default { "Yes" } else { "No" }

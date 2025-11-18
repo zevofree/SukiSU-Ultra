@@ -661,10 +661,7 @@ pub fn run() -> Result<()> {
             }
         }
         Commands::Umount { command } => match command {
-            Umount::Add {
-                path,
-                flags,
-            } => crate::umount_manager::add_umount_path(&path, flags),
+            Umount::Add { path, flags } => crate::umount_manager::add_umount_path(&path, flags),
             Umount::Remove { path } => crate::umount_manager::remove_umount_path(&path),
             Umount::List => crate::umount_manager::list_umount_paths(),
             Umount::ClearCustom => crate::umount_manager::clear_custom_paths(),
