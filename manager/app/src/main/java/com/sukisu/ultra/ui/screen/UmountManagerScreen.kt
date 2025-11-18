@@ -1,5 +1,6 @@
 package com.sukisu.ultra.ui.screen
 
+import android.content.Context
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -403,17 +404,17 @@ private fun parseUmountPaths(output: String): List<UmountPathEntry> {
 
     return lines.drop(2).mapNotNull { line ->
         val parts = line.trim().split(Regex("\\s+"))
-        if (parts.size >= 4) {
+        if (parts.size >= 3) {
             UmountPathEntry(
                 path = parts[0],
-                flags = parts[2].toIntOrNull() ?: -1,
-                isDefault = parts[3].equals("Yes", ignoreCase = true)
+                flags = parts[1].toIntOrNull() ?: -1,
+                isDefault = parts[2].equals("Yes", ignoreCase = true)
             )
         } else null
     }
 }
 
-private fun Int.toUmountFlagName(context: android.content.Context): String {
+private fun Int.toUmountFlagName(context: Context): String {
     return when (this) {
         -1 -> context.getString(R.string.mnt_detach)
         else -> this.toString()
