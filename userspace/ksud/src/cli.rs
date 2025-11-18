@@ -390,6 +390,32 @@ enum Kernel {
         /// mount point
         mnt: String,
     },
+    /// Manage umount list
+    Umount {
+        #[command(subcommand)]
+        command: UmountOp,
+    },
+    /// Notify that module is mounted
+    NotifyModuleMounted,
+}
+
+#[derive(clap::Subcommand, Debug)]
+enum UmountOp {
+    /// Add mount point to umount list
+    Add {
+        /// mount point path
+        mnt: String,
+        /// umount flags (default: 0, MNT_DETACH: 2)
+        #[arg(short, long, default_value = "0")]
+        flags: u32,
+    },
+    /// Delete mount point from umount list
+    Del {
+        /// mount point path
+        mnt: String,
+    },
+    /// Wipe all entries from umount list
+    Wipe,
 }
 
 #[cfg(target_arch = "aarch64")]
@@ -425,7 +451,6 @@ enum Umount {
 
         /// Check mount type (overlay)
         #[arg(long, default_value = "false")]
-        check_mnt: bool,
 
         /// Umount flags (0 or 8 for MNT_DETACH)
         #[arg(long, default_value = "-1")]
@@ -606,6 +631,15 @@ pub fn run() -> Result<()> {
         } => crate::boot_patch::restore(boot, magiskboot, flash),
         Commands::Kernel { command } => match command {
             Kernel::NukeExt4Sysfs { mnt } => ksucalls::nuke_ext4_sysfs(&mnt),
+            Kernel::Umount { command } => match command {
+                UmountOp::Add { mnt, flags } => ksucalls::umount_list_add(&mnt, flags),
+                UmountOp::Del { mnt } => ksucalls::umount_list_del(&mnt),
+                UmountOp::Wipe => ksucalls::umount_list_wipe().map_err(Into::into),
+            },
+            Kernel::NotifyModuleMounted => {
+                ksucalls::report_module_mounted();
+                Ok(())
+            }
         },
         #[cfg(target_arch = "aarch64")]
         Commands::Kpm { command } => {
@@ -629,9 +663,8 @@ pub fn run() -> Result<()> {
         Commands::Umount { command } => match command {
             Umount::Add {
                 path,
-                check_mnt,
                 flags,
-            } => crate::umount_manager::add_umount_path(&path, check_mnt, flags),
+            } => crate::umount_manager::add_umount_path(&path, flags),
             Umount::Remove { path } => crate::umount_manager::remove_umount_path(&path),
             Umount::List => crate::umount_manager::list_umount_paths(),
             Umount::ClearCustom => crate::umount_manager::clear_custom_paths(),
