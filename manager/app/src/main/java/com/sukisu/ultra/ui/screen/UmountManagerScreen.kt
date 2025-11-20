@@ -38,6 +38,7 @@ private val SPACING_LARGE = 16.dp
 
 data class UmountPathEntry(
     val path: String,
+    val checkMnt: Boolean,
     val flags: Int,
     val isDefault: Boolean
 )
@@ -243,11 +244,11 @@ fun UmountManagerScreen(navigator: DestinationsNavigator) {
         if (showAddDialog) {
             AddUmountPathDialog(
                 onDismiss = { showAddDialog = false },
-                onConfirm = { path, flags ->
+                onConfirm = { path, checkMnt, flags ->
                     showAddDialog = false
 
                     scope.launch(Dispatchers.IO) {
-                        val success = addUmountPath(path, flags)
+                        val success = addUmountPath(path, checkMnt, flags)
                         withContext(Dispatchers.Main) {
                             if (success) {
                                 saveUmountConfig()
@@ -308,6 +309,10 @@ fun UmountPathCard(
                 Spacer(modifier = Modifier.height(SPACING_SMALL))
                 Text(
                     text = buildString {
+                        append(context.getString(R.string.check_mount_type))
+                        append(": ")
+                        append(if (entry.checkMnt) context.getString(R.string.yes) else context.getString(R.string.no))
+                        append(" | ")
                         append(context.getString(R.string.flags))
                         append(": ")
                         append(entry.flags.toUmountFlagName(context))
@@ -348,9 +353,10 @@ fun UmountPathCard(
 @Composable
 fun AddUmountPathDialog(
     onDismiss: () -> Unit,
-    onConfirm: (String, Int) -> Unit
+    onConfirm: (String, Boolean, Int) -> Unit
 ) {
     var path by rememberSaveable { mutableStateOf("") }
+    var checkMnt by rememberSaveable { mutableStateOf(false) }
     var flags by rememberSaveable { mutableStateOf("-1") }
 
     AlertDialog(
@@ -365,6 +371,20 @@ fun AddUmountPathDialog(
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
+
+                Spacer(modifier = Modifier.height(SPACING_MEDIUM))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Checkbox(
+                        checked = checkMnt,
+                        onCheckedChange = { checkMnt = it }
+                    )
+                    Spacer(modifier = Modifier.width(SPACING_SMALL))
+                    Text(stringResource(R.string.check_mount_type_overlay))
+                }
 
                 Spacer(modifier = Modifier.height(SPACING_MEDIUM))
 
@@ -383,7 +403,7 @@ fun AddUmountPathDialog(
             TextButton(
                 onClick = {
                     val flagsInt = flags.toIntOrNull() ?: -1
-                    onConfirm(path, flagsInt)
+                    onConfirm(path, checkMnt, flagsInt)
                 },
                 enabled = path.isNotBlank()
             ) {
@@ -404,11 +424,12 @@ private fun parseUmountPaths(output: String): List<UmountPathEntry> {
 
     return lines.drop(2).mapNotNull { line ->
         val parts = line.trim().split(Regex("\\s+"))
-        if (parts.size >= 3) {
+        if (parts.size >= 4) {
             UmountPathEntry(
                 path = parts[0],
-                flags = parts[1].toIntOrNull() ?: -1,
-                isDefault = parts[2].equals("Yes", ignoreCase = true)
+                checkMnt = parts[1].equals("true", ignoreCase = true),
+                flags = parts[2].toIntOrNull() ?: -1,
+                isDefault = parts[3].equals("Yes", ignoreCase = true)
             )
         } else null
     }
