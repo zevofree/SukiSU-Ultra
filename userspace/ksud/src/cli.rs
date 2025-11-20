@@ -1,15 +1,13 @@
 use anyhow::{Ok, Result};
 use clap::Parser;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 #[cfg(target_os = "android")]
 use android_logger::Config;
 #[cfg(target_os = "android")]
 use log::LevelFilter;
 
-use crate::{
-    apk_sign, assets, debug, defs, defs::KSUD_VERBOSE_LOG_FILE, init_event, ksucalls, module, utils,
-};
+use crate::{apk_sign, assets, debug, defs, init_event, ksucalls, module, utils};
 
 /// KernelSU userspace cli
 #[derive(Parser, Debug)]
@@ -17,9 +15,6 @@ use crate::{
 struct Args {
     #[command(subcommand)]
     command: Commands,
-
-    #[arg(short, long, default_value_t = cfg!(debug_assertions))]
-    verbose: bool,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -189,7 +184,7 @@ enum Debug {
     /// Set the manager app, kernel CONFIG_KSU_DEBUG should be enabled.
     SetManager {
         /// manager package name
-        #[arg(default_value_t = String::from("me.weishu.kernelsu"))]
+        #[arg(default_value_t = String::from("com.sukisu.ultra"))]
         apk: String,
     },
 
@@ -208,8 +203,6 @@ enum Debug {
 
     /// Get kernel version
     Version,
-
-    Mount,
 
     /// For testing
     Test,
@@ -277,14 +270,14 @@ enum Module {
         zip: String,
     },
 
-    /// Uninstall module <id>
-    Uninstall {
+    /// Undo module uninstall mark <id>
+    UndoUninstall {
         /// module id
         id: String,
     },
 
-    /// Restore module <id>
-    Restore {
+    /// Uninstall module <id>
+    Uninstall {
         /// module id
         id: String,
     },
@@ -466,7 +459,7 @@ enum Umount {
     /// List all umount paths
     List,
 
-    /// Clear all custom paths (keep defaults)
+    /// Clear all recorded umount paths
     ClearCustom,
 
     /// Save configuration to file
@@ -498,10 +491,6 @@ pub fn run() -> Result<()> {
 
     let cli = Args::parse();
 
-    if !cli.verbose && !Path::new(KSUD_VERBOSE_LOG_FILE).exists() {
-        log::set_max_level(LevelFilter::Info);
-    }
-
     log::info!("command: {:?}", cli.command);
 
     let result = match cli.command {
@@ -515,8 +504,8 @@ pub fn run() -> Result<()> {
             }
             match command {
                 Module::Install { zip } => module::install_module(&zip),
+                Module::UndoUninstall { id } => module::undo_uninstall_module(&id),
                 Module::Uninstall { id } => module::uninstall_module(&id),
-                Module::Restore { id } => module::restore_uninstall_module(&id),
                 Module::Enable { id } => module::enable_module(&id),
                 Module::Disable { id } => module::disable_module(&id),
                 Module::Action { id } => module::run_action(&id),
@@ -563,7 +552,6 @@ pub fn run() -> Result<()> {
                 Ok(())
             }
             Debug::Su { global_mnt } => crate::su::grant_root(global_mnt),
-            Debug::Mount => init_event::mount_modules_systemlessly(),
             Debug::Test => assets::ensure_binaries(false),
             Debug::Mark { command } => match command {
                 MarkCommand::Get { pid } => debug::mark_get(pid),
@@ -672,11 +660,7 @@ pub fn run() -> Result<()> {
     };
 
     if let Err(e) = &result {
-        for c in e.chain() {
-            log::error!("{c:#?}");
-        }
-
-        log::error!("{:#?}", e.backtrace());
+        log::error!("Error: {e:?}");
     }
     result
 }
