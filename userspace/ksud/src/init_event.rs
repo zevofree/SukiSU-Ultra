@@ -1,6 +1,3 @@
-use anyhow::{Context, Result};
-use log::{info, warn};
-use std::path::Path;
 #[cfg(target_arch = "aarch64")]
 use crate::kpm;
 use crate::module::{handle_updated_modules, prune_modules};
@@ -9,6 +6,9 @@ use crate::{
     assets, defs, ksucalls, metamodule, restorecon,
     utils::{self},
 };
+use anyhow::{Context, Result};
+use log::{info, warn};
+use std::path::Path;
 
 pub fn on_post_data_fs() -> Result<()> {
     ksucalls::report_post_fs_data();

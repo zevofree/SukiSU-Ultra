@@ -170,7 +170,7 @@ impl UmountManager {
 }
 
 pub fn init_umount_manager() -> Result<UmountManager> {
-    let mut manager = UmountManager::new(None)?;
+    let manager = UmountManager::new(None)?;
 
     if !Path::new(CONFIG_FILE).exists() {
         manager.save_config()?;
