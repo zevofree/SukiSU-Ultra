@@ -10,69 +10,67 @@ const EVENT_PATH = process.env.GITHUB_EVENT_PATH!;
 
 const bot = new Bot(BOT_TOKEN);
 
-const FileSchema = z.object({
-  path: z.string(),
-});
+const FileNode = z.object({ path: z.string() });
 
 const PullRequestSchema = z.object({
   action: z.string(),
   number: z.number(),
   repository: z.object({
     full_name: z.string(),
-    html_url: z.url()
+    html_url: z.url(),
   }),
   pull_request: z.object({
-    url: z.url(),
+    html_url: z.url().optional(),
+    url: z.url().optional(),
     title: z.string(),
     body: z.string().nullable(),
-    user: z.object({
-      login: z.string(),
-      html_url: z.url()
-    }),
+    user: z.object({ login: z.string(), html_url: z.url() }),
     head: z.object({ ref: z.string() }),
     base: z.object({ ref: z.string() }),
-    changed_files: z.number(),
-    additions: z.number(),
-    deletions: z.number()
-  })
+    changed_files: z.number().optional().default(0),
+    additions: z.number().optional().default(0),
+    deletions: z.number().optional().default(0),
+  }),
 });
 
 const PushSchema = z.object({
   ref: z.string(),
   repository: z.object({
     full_name: z.string(),
-    html_url: z.url()
+    html_url: z.url(),
   }),
-  head_commit: z.object({
-    id: z.string(),
-    url: z.url(),
-    message: z.string(),
-    author: z.object({
-      name: z.string(),
-      email: z.email()
-    }),
-    added: z.array(z.string()),
-    modified: z.array(z.string()),
-    removed: z.array(z.string())
-  }).nullable()
+  head_commit: z
+    .object({
+      id: z.string(),
+      url: z.url(),
+      message: z.string(),
+      author: z.object({ name: z.string(), email: z.email() }),
+      added: z.array(z.string()).optional().default([]),
+      modified: z.array(z.string()).optional().default([]),
+      removed: z.array(z.string()).optional().default([]),
+    })
+    .nullable(),
 });
 
 function detectLanguage(files: string[]): string {
-  const ext = files.map(f => f.split(".").pop()?.toLowerCase() || "");
-  if (ext.includes("kt") || ext.includes("kts")) return "Kotlin";
-  if (ext.includes("c") && !ext.includes("h")) return "C";
-  if (ext.includes("rs")) return "Rust";
-  if (ext.includes("sh")) return "Shell";
-  if (ext.includes("ts") || ext.includes("tsx")) return "TypeScript";
-  return "Unknown";
+  const ext = files.map((f) => (f.split(".").pop() || "").toLowerCase());
+  if (ext.some((e) => e === "kt" || e === "kts")) return "Kotlin";
+  if (ext.some((e) => e === "rs")) return "Rust";
+  if (ext.some((e) => e === "c")) return "C";
+  if (ext.some((e) => e === "sh")) return "Shell";
+  if (ext.some((e) => e === "ts" || e === "tsx")) return "TypeScript";
+  return "Other";
 }
 
-async function fetchPrFiles(repoFullName: string, prNumber: number): Promise<string[]> {
+async function fetchPrFiles(
+  repoFullName: string,
+  prNumber: number,
+): Promise<string[]> {
   const query = `
-    query($owner: String!, $name: String!, $number: Int!) {
-      repository(owner: $owner, name: $name) {
-        pullRequest(number: $number) {
-          files(first: 100) {
+    query($owner:String!, $name:String!, $number:Int!) {
+      repository(owner:$owner, name:$name) {
+        pullRequest(number:$number) {
+          files(first:100) {
             nodes {
               path
             }
@@ -84,74 +82,116 @@ async function fetchPrFiles(repoFullName: string, prNumber: number): Promise<str
   const resp = await fetch("https://api.github.com/graphql", {
     method: "POST",
     headers: {
-      "Authorization": `bearer ${GITHUB_TOKEN}`,
-      "Content-Type": "application/json"
+      Authorization: `bearer ${GITHUB_TOKEN}`,
+      "Content-Type": "application/json",
     },
-    body: JSON.stringify({ query, variables: { owner, name, number: prNumber } })
+    body: JSON.stringify({
+      query,
+      variables: { owner, name, number: prNumber },
+    }),
   });
-  const json = await resp.json() as any;
-  const nodes = json.data.repository.pullRequest.files.nodes as { path: string }[];
-  return nodes.map(n => n.path);
+  if (!resp.ok) {
+    const body = await resp.text();
+    throw new Error(`GitHub GraphQL API error: ${resp.status} ${body}`);
+  }
+  const json = (await resp.json()) as any;
+  const nodes = json?.data?.repository?.pullRequest?.files?.nodes as
+    | { path: string }[]
+    | undefined;
+  if (!nodes || !Array.isArray(nodes)) return [];
+  return nodes.map((n) => n.path);
 }
 
-async function formatPrMessage(evt: z.infer<typeof PullRequestSchema>): Promise<string> {
-  const files = await fetchPrFiles(evt.repository.full_name, evt.number);
+function prUrlOf(pr: { html_url?: string; url?: string }) {
+  return pr.html_url ?? pr.url ?? "";
+}
+
+async function formatPrMessage(
+  evt: z.infer<typeof PullRequestSchema>,
+): Promise<{ text: string; fileLink: string }> {
+  const pr = evt.pull_request;
+  const repo = evt.repository;
+  const files = await fetchPrFiles(repo.full_name, evt.number);
   const lang = detectLanguage(files);
-  return `Repository: [${evt.repository.full_name}](${evt.repository.html_url})
-Pull Request #: [${evt.number}](${evt.pull_request.url})
-Author: [${evt.pull_request.user.login}](${evt.pull_request.user.html_url})
-Files Changed: ${evt.pull_request.changed_files}, +${evt.pull_request.additions}/- ${evt.pull_request.deletions}
-Likely Language: ${lang}
-Title: ${evt.pull_request.title}
-Description: ${evt.pull_request.body ?? "_None provided_"}`
+  const prUrl = prUrlOf(pr);
+  const fileLink = prUrl ? `${prUrl}/files` : repo.html_url;
+  const bodyText = pr.body ? pr.body : "_No description provided_";
+  const text =
+    `### Repository\n[${repo.full_name}](${repo.html_url})\n\n` +
+    `**Pull Request #${evt.number}:** [${pr.title}](${prUrl || repo.html_url})\n\n` +
+    `**Author:** [${pr.user.login}](${pr.user.html_url})\n` +
+    `**Files Changed:** ${pr.changed_files}\n` +
+    `**Additions / Deletions:** +${pr.additions} / -${pr.deletions}\n` +
+    `**Language:** ${lang}\n\n` +
+    `**Description:**\n\`\`\`\n${bodyText}\n\`\`\``;
+  return { text, fileLink };
 }
 
-function formatPushMessage(evt: z.infer<typeof PushSchema>): string {
+function formatPushMessage(evt: z.infer<typeof PushSchema>): {
+  text: string;
+  fileLink: string;
+} {
+  const repo = evt.repository;
   const c = evt.head_commit;
   if (!c) {
-    return `Repository: [${evt.repository.full_name}](${evt.repository.html_url})
-Push event but no head commit data.`;
+    const text = `### Repository\n[${repo.full_name}](${repo.html_url})\n\nPush event detected, but no head commit data available.`;
+    return { text, fileLink: repo.html_url };
   }
+  const added = c.added ?? [];
+  const modified = c.modified ?? [];
+  const removed = c.removed ?? [];
   const details = [
-    c.added.length ? `Added: ${c.added.join(", ")}` : "",
-    c.modified.length ? `Modified: ${c.modified.join(", ")}` : "",
-    c.removed.length ? `Removed: ${c.removed.join(", ")}` : ""
-  ].filter(Boolean).join("\n");
-  const lang = detectLanguage([...c.added, ...c.modified, ...c.removed]);
-  return `Repository: [${evt.repository.full_name}](${evt.repository.html_url})
-Commit: [${c.id}](${c.url})
-Author: ${c.author.name} <${c.author.email}>
-Message: ${c.message}
-${details ? details + "\n" : ""}Detected Language: ${lang}`;
+    added.length ? `➕ Added: ${added.join(", ")}` : "",
+    modified.length ? `✏️ Modified: ${modified.join(", ")}` : "",
+    removed.length ? `❌ Removed: ${removed.join(", ")}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+  const lang = detectLanguage([...added, ...modified, ...removed]);
+  const fileLink = c.url;
+  const text =
+    `### Repository\n[${repo.full_name}](${repo.html_url})\n\n` +
+    `**Commit:** [${c.id}](${c.url})\n` +
+    `**Author:** ${c.author.name} <${c.author.email}>\n` +
+    `**Message:**\n\`\`\`\n${c.message}\n\`\`\`\n` +
+    (details ? `**Changes:**\n${details}\n` : "") +
+    `**Language:** ${lang}`;
+  return { text, fileLink };
 }
 
 async function main(): Promise<void> {
-  const raw = await (await import("node:fs/promises")).readFile(EVENT_PATH, "utf-8");
+  const raw = await (
+    await import("node:fs/promises")
+  ).readFile(EVENT_PATH, "utf-8");
   const parsed = JSON.parse(raw);
-  let message: string;
+  let messageObj: { text: string; fileLink: string };
   let topic: number;
-
-  try {
+  if ("pull_request" in parsed) {
     const prEvt = PullRequestSchema.parse(parsed);
-    message = await formatPrMessage(prEvt);
+    messageObj = await formatPrMessage(prEvt);
     topic = TOPIC_PRS;
-  } catch {
+  } else {
     const pushEvt = PushSchema.parse(parsed);
-    message = formatPushMessage(pushEvt);
+    messageObj = formatPushMessage(pushEvt);
     topic = TOPIC_COMMITS;
   }
-
-  const keyboard = new InlineKeyboard().url("View on GitHub", (parsed.repository as any).html_url as string);
-  await bot.api.sendMessage(GROUP_ID, message, {
+  const repoUrl =
+    (parsed.repository &&
+      (parsed.repository.html_url ?? parsed.repository.url)) ||
+    "";
+  const keyboard = new InlineKeyboard()
+    .url("View on GitHub", repoUrl)
+    .row()
+    .url("View Files", messageObj.fileLink);
+  await bot.api.sendMessage(GROUP_ID, messageObj.text, {
     parse_mode: "Markdown",
     message_thread_id: topic,
-    reply_markup: keyboard
+    reply_markup: keyboard,
   });
-
   process.exit(0);
 }
 
-main().catch(err => {
+main().catch((err) => {
   console.error(err);
   process.exit(1);
 });
