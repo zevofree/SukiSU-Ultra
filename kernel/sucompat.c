@@ -18,9 +18,9 @@
 #include "ksud.h"
 #include "sucompat.h"
 #include "app_profile.h"
+#include "util.h"
 
 #include "sulog.h"
-#include "util.h"
 
 #define SU_PATH "/system/bin/su"
 #define SH_PATH "/system/bin/sh"
@@ -124,8 +124,8 @@ int ksu_handle_stat(int *dfd, const char __user **filename_user, int *flags)
 }
 
 int ksu_handle_execve_sucompat(const char __user **filename_user,
-                               void *__never_use_argv, void *__never_use_envp,
-                               int *__never_use_flags)
+                   void *__never_use_argv, void *__never_use_envp,
+                   int *__never_use_flags)
 {
     const char su[] = SU_PATH;
     const char __user *fn;
