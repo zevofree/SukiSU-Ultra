@@ -156,6 +156,7 @@ static void sulog_process_queue(void)
     LIST_HEAD(local_queue);
     loff_t pos = 0;
     unsigned long flags;
+    const struct cred *old_cred;
 
     spin_lock_irqsave(&dedup_lock, flags);
     list_splice_init(&sulog_queue, &local_queue);
@@ -164,10 +165,12 @@ static void sulog_process_queue(void)
     if (list_empty(&local_queue))
         return;
 
+    old_cred = override_creds(ksu_cred);
+
     fp = filp_open(SULOG_PATH, O_WRONLY | O_CREAT | O_APPEND, 0640);
     if (IS_ERR(fp)) {
         pr_err("sulog: failed to open log file: %ld\n", PTR_ERR(fp));
-        goto cleanup;
+        goto revert_creds_out;
     }
 
     if (fp->f_inode->i_size > SULOG_MAX_SIZE) {
@@ -184,7 +187,9 @@ static void sulog_process_queue(void)
     vfs_fsync(fp, 0);
     filp_close(fp, 0);
 
-cleanup:
+revert_creds_out:
+    revert_creds(old_cred);
+
     list_for_each_entry_safe(entry, tmp, &local_queue, list) {
         list_del(&entry->list);
         kfree(entry);
