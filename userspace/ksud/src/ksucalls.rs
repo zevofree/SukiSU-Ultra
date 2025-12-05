@@ -377,7 +377,7 @@ pub fn umount_list_list() -> anyhow::Result<String> {
         buf_size: BUF_SIZE as u32,
     };
     ksuctl(KSU_IOCTL_ADD_TRY_UMOUNT, &raw mut cmd)?;
-    
+
     // Find null terminator or end of buffer
     let len = buffer.iter().position(|&b| b == 0).unwrap_or(BUF_SIZE);
     let result = String::from_utf8_lossy(&buffer[..len]).to_string();

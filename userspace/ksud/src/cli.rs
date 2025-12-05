@@ -9,7 +9,8 @@ use log::LevelFilter;
 
 use crate::boot_patch::{BootPatchArgs, BootRestoreArgs};
 use crate::{
-    apk_sign, assets, debug, defs, init_event, ksucalls, module, module_config, susfs, umount, utils,
+    apk_sign, assets, debug, defs, init_event, ksucalls, module, module_config, susfs, umount,
+    utils,
 };
 
 /// KernelSU userspace cli
@@ -752,7 +753,7 @@ pub fn run() -> Result<()> {
                 }
                 Kpm::Version => crate::kpm::kpm_version_loader(),
             }
-        },
+        }
     };
 
     if let Err(e) = &result {
