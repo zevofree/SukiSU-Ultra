@@ -711,7 +711,7 @@ Important Note:\n
     <string name="add_umount_path">Add Umount Path</string>
     <string name="mount_path">Mount Path</string>
     <string name="umount_flags">Unmount Flags</string>
-    <string name="umount_flags_hint">0=Normal unmount, 8=MNT_DETACH, -1=Auto</string>
+    <string name="umount_flags_hint">0=Normal unmount, 2=MNT_DETACH</string>
     <string name="flags">Flags</string>
     <string name="confirm_delete">Confirm Delete</string>
     <string name="confirm_delete_umount_path">Are you sure you want to delete the path %s?</string>

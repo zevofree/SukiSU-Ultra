@@ -29,9 +29,9 @@ mod restorecon;
 mod sepolicy;
 mod su;
 mod susfs;
+mod umount;
 #[cfg(target_os = "android")]
 mod uid_scanner;
-mod umount_manager;
 mod utils;
 
 fn main() -> anyhow::Result<()> {

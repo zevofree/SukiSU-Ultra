@@ -18,7 +18,6 @@
 #include "ksud.h"
 #include "ksu.h"
 
-#include "umount_manager.h"
 #include "sulog.h"
 
 static bool ksu_kernel_umount_enabled = true;
@@ -88,8 +87,6 @@ static void umount_tw_func(struct callback_head *cb)
     }
     up_read(&mount_list_lock);
 
-    ksu_umount_manager_execute_all(saved);
-
     revert_creds(saved);
 
     kfree(tw);
@@ -158,11 +155,6 @@ int ksu_handle_umount(uid_t old_uid, uid_t new_uid)
 
 void ksu_kernel_umount_init(void)
 {
-    int rc = 0;
-    rc = ksu_umount_manager_init();
-    if (rc) {
-        pr_err("Failed to initialize umount manager: %d\n", rc);
-    }
     if (ksu_register_feature_handler(&kernel_umount_handler)) {
         pr_err("Failed to register kernel_umount feature handler\n");
     }
