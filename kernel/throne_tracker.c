@@ -16,7 +16,7 @@
 #include "dynamic_manager.h"
 #include "throne_comm.h"
 
-uid_t ksu_manager_uid = KSU_INVALID_UID;
+uid_t ksu_manager_appid = KSU_INVALID_APPID;
 static uid_t locked_manager_uid = KSU_INVALID_UID;
 static uid_t locked_dynamic_manager_uid = KSU_INVALID_UID;
 
@@ -185,12 +185,12 @@ static void crown_manager(const char *apk, struct list_head *uid_data, int signa
                 locked_dynamic_manager_uid = np->uid;
 
                 // If there is no traditional manager, set it to the current UID
-                if (!ksu_is_manager_uid_valid()) {
-                    ksu_set_manager_uid(np->uid);
+                if (!ksu_is_manager_appid_valid()) {
+                    ksu_set_manager_appid(np->uid);
                     locked_manager_uid = np->uid;
                 }
             } else {
-                ksu_set_manager_uid(np->uid); // throne new UID
+                ksu_set_manager_appid(np->uid); // throne new UID
                 locked_manager_uid = np->uid; // store locked UID
             }
             break;
@@ -413,7 +413,7 @@ static bool is_uid_exist(uid_t uid, char *package, void *data)
 
     bool exist = false;
     list_for_each_entry (np, list, list) {
-        if (np->uid == uid % 100000 &&
+        if (np->uid == uid % PER_USER_RANGE &&
             strncmp(np->package, package, KSU_MAX_PACKAGE_NAME) == 0) {
             exist = true;
             break;
@@ -433,7 +433,6 @@ void track_throne(bool prune_only)
     char buf[KSU_MAX_PACKAGE_NAME];
     static bool manager_exist = false;
     static bool dynamic_manager_exist = false;
-    int current_manager_uid = ksu_get_manager_uid() % 100000;
 
     // init uid list head
     INIT_LIST_HEAD(&uid_list);
@@ -504,7 +503,7 @@ uid_ready:
 
     // first, check if manager_uid exist!
     list_for_each_entry(np, &uid_list, list) {
-        if (np->uid == current_manager_uid) {
+        if (np->uid == ksu_get_manager_appid()) {
             manager_exist = true;
             break;
         }
