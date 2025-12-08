@@ -6,9 +6,10 @@ use android_logger::Config;
 use log::LevelFilter;
 
 use crate::boot_patch::{BootPatchArgs, BootRestoreArgs};
+#[cfg(target_arch = "aarch64")]
+use crate::susfs;
 use crate::{
-    apk_sign, assets, debug, defs, init_event, ksucalls, module, module_config, susfs, umount,
-    utils,
+    apk_sign, assets, debug, defs, init_event, ksucalls, module, module_config, umount, utils,
 };
 
 /// KernelSU userspace cli
@@ -36,6 +37,7 @@ enum Commands {
     /// Trigger `boot-complete` event
     BootCompleted,
 
+    #[cfg(target_arch = "aarch64")]
     /// Susfs
     Susfs {
         #[command(subcommand)]
@@ -460,6 +462,7 @@ mod kpm_cmd {
     }
 }
 
+#[cfg(target_arch = "aarch64")]
 #[derive(clap::Subcommand, Debug)]
 enum Susfs {
     /// Get SUSFS Status
@@ -493,6 +496,7 @@ pub fn run() -> Result<()> {
             init_event::on_boot_completed();
             Ok(())
         }
+        #[cfg(target_arch = "aarch64")]
         Commands::Susfs { command } => {
             match command {
                 Susfs::Version => println!("{}", susfs::get_susfs_version()),

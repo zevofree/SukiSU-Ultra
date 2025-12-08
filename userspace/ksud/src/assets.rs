@@ -36,27 +36,10 @@ pub use android::*;
 struct Asset;
 
 // IF NOT x86_64 ANDROID, ie. macos, linux, windows, always use aarch64
-#[cfg(all(target_arch = "aarch64", target_os = "android"))]
+#[cfg(not(all(target_arch = "x86_64", target_os = "android")))]
 #[derive(RustEmbed)]
 #[folder = "bin/aarch64"]
 struct Asset;
-
-#[cfg(all(target_arch = "arm", target_os = "android"))]
-#[derive(RustEmbed)]
-#[folder = "bin/arm"]
-struct Asset;
-
-pub fn ensure_binaries(ignore_if_exist: bool) -> Result<()> {
-    for file in Asset::iter() {
-        if file == "ksuinit" || file.ends_with(".ko") {
-            // don't extract ksuinit and kernel modules
-            continue;
-        }
-        let asset = Asset::get(&file).ok_or_else(|| anyhow::anyhow!("asset not found: {file}"))?;
-        utils::ensure_binary(format!("{BINARY_DIR}{file}"), &asset.data, ignore_if_exist)?;
-    }
-    Ok(())
-}
 
 pub fn copy_assets_to_file(name: &str, dst: impl AsRef<Path>) -> Result<()> {
     let asset = Asset::get(name).ok_or_else(|| anyhow::anyhow!("asset not found: {name}"))?;
