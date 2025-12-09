@@ -708,7 +708,7 @@ pub fn run() -> Result<()> {
         Commands::BootRestore(boot_restore) => crate::boot_patch::restore(boot_restore),
         Commands::Umount { command } => match command {
             Umount::Add { mnt, flags } => ksucalls::umount_list_add(&mnt, flags),
-            Umount::Remove { mnt } => ksucalls::umount_list_del(&mnt),
+            Umount::Remove { mnt } => umount::remove_umount_entry_from_config(&mnt),
             Umount::List => {
                 let list = ksucalls::umount_list_list()?;
                 print!("{list}");
