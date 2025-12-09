@@ -614,6 +614,55 @@ static int add_try_umount(void __user *arg)
     return 0;
 }
 
+static int list_try_umount(void __user *arg)
+{
+    struct ksu_list_try_umount_cmd cmd;
+    struct mount_entry *entry;
+    char *output_buf;
+    size_t output_size;
+    size_t offset = 0;
+    int ret = 0;
+
+    if (copy_from_user(&cmd, arg, sizeof(cmd)))
+        return -EFAULT;
+
+    output_size = cmd.buf_size ? cmd.buf_size : 4096;
+
+    if (!cmd.arg || output_size == 0)
+        return -EINVAL;
+
+    output_buf = kzalloc(output_size, GFP_KERNEL);
+    if (!output_buf)
+        return -ENOMEM;
+
+    offset += snprintf(output_buf + offset, output_size - offset, "Mount Point\tFlags\n");
+    offset += snprintf(output_buf + offset, output_size - offset, "----------\t-----\n");
+
+    down_read(&mount_list_lock);
+    list_for_each_entry(entry, &mount_list, list) {
+        int written = snprintf(output_buf + offset, output_size - offset,
+                               "%s\t%u\n", entry->umountable, entry->flags);
+        if (written < 0) {
+            ret = -EFAULT;
+            break;
+        }
+        if (written >= (int)(output_size - offset)) {
+            ret = -ENOSPC;
+            break;
+        }
+        offset += written;
+    }
+    up_read(&mount_list_lock);
+
+    if (ret == 0) {
+        if (copy_to_user((void __user *)cmd.arg, output_buf, offset))
+            ret = -EFAULT;
+    }
+
+    kfree(output_buf);
+    return ret;
+}
+
 // 100. GET_FULL_VERSION - Get full version string
 static int do_get_full_version(void __user *arg)
 {
@@ -846,6 +895,7 @@ static const struct ksu_ioctl_cmd_map ksu_ioctl_handlers[] = {
 #ifdef CONFIG_KPM
     { .cmd = KSU_IOCTL_KPM, .name = "KPM_OPERATION", .handler = do_kpm, .perm_check = manager_or_root},
 #endif
+    { .cmd = KSU_IOCTL_LIST_TRY_UMOUNT, .name = "LIST_TRY_UMOUNT", .handler = list_try_umount, .perm_check = manager_or_root },
     { .cmd = 0, .name = NULL, .handler = NULL, .perm_check = NULL} // Sentine
 };
 
