@@ -60,7 +60,8 @@ bool allowed_for_su(void)
     bool is_allowed =
         is_manager() || ksu_is_allow_uid_for_current(current_uid().val);
 #if __SULOG_GATE
-	ksu_sulog_report_permission_check(current_uid().val, current->comm, is_allowed);
+    ksu_sulog_report_permission_check(current_uid().val, current->comm,
+                                      is_allowed);
 #endif
     return is_allowed;
 }
@@ -68,7 +69,6 @@ bool allowed_for_su(void)
 static void init_uid_scanner(void)
 {
     ksu_throne_comm_load_state();
-    
     if (ksu_uid_scanner_enabled) {
         int ret = ksu_throne_comm_init();
         if (ret != 0) {
@@ -123,7 +123,7 @@ static int do_report_event(void __user *arg)
             pr_info("post-fs-data triggered\n");
             on_post_fs_data();
             init_uid_scanner();
-#if __SULOG_GATE    
+#if __SULOG_GATE
             ksu_sulog_init();
 #endif
             ksu_dynamic_manager_init();
@@ -307,8 +307,8 @@ static int do_set_app_profile(void __user *arg)
 
     if (!ksu_set_app_profile(&cmd.profile, true)) {
 #if __SULOG_GATE
-            ksu_sulog_report_manager_operation("SET_APP_PROFILE", 
-                current_uid().val, cmd.profile.current_uid);
+        ksu_sulog_report_manager_operation("SET_APP_PROFILE", current_uid().val,
+                                           cmd.profile.current_uid);
 #endif
         return -EFAULT;
     }
@@ -641,11 +641,13 @@ static int list_try_umount(void __user *arg)
     if (!output_buf)
         return -ENOMEM;
 
-    offset += snprintf(output_buf + offset, output_size - offset, "Mount Point\tFlags\n");
-    offset += snprintf(output_buf + offset, output_size - offset, "----------\t-----\n");
+    offset += snprintf(output_buf + offset, output_size - offset,
+                       "Mount Point\tFlags\n");
+    offset += snprintf(output_buf + offset, output_size - offset,
+                       "----------\t-----\n");
 
     down_read(&mount_list_lock);
-    list_for_each_entry(entry, &mount_list, list) {
+    list_for_each_entry (entry, &mount_list, list) {
         int written = snprintf(output_buf + offset, output_size - offset,
                                "%s\t%u\n", entry->umountable, entry->flags);
         if (written < 0) {
@@ -672,7 +674,7 @@ static int list_try_umount(void __user *arg)
 // 100. GET_FULL_VERSION - Get full version string
 static int do_get_full_version(void __user *arg)
 {
-    struct ksu_get_full_version_cmd cmd = {0};
+    struct ksu_get_full_version_cmd cmd = { 0 };
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 13, 0)
     strscpy(cmd.version_full, KSU_VERSION_FULL, sizeof(cmd.version_full));
@@ -691,7 +693,7 @@ static int do_get_full_version(void __user *arg)
 // 101. HOOK_TYPE - Get hook type
 static int do_get_hook_type(void __user *arg)
 {
-    struct ksu_hook_type_cmd cmd = {0};
+    struct ksu_hook_type_cmd cmd = { 0 };
     const char *type = "Tracepoint";
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 13, 0)
@@ -712,7 +714,7 @@ static int do_get_hook_type(void __user *arg)
 static int do_enable_kpm(void __user *arg)
 {
     struct ksu_enable_kpm_cmd cmd;
-    
+
     cmd.enabled = IS_ENABLED(CONFIG_KPM);
 
     if (copy_to_user(arg, &cmd, sizeof(cmd))) {
@@ -736,7 +738,7 @@ static int do_dynamic_manager(void __user *arg)
     if (ret)
         return ret;
 
-    if (cmd.config.operation == DYNAMIC_MANAGER_OP_GET && 
+    if (cmd.config.operation == DYNAMIC_MANAGER_OP_GET &&
         copy_to_user(arg, &cmd, sizeof(cmd))) {
         pr_err("dynamic_manager: copy_to_user failed\n");
         return -EFAULT;
@@ -771,52 +773,53 @@ static int do_enable_uid_scanner(void __user *arg)
     }
 
     switch (cmd.operation) {
-        case UID_SCANNER_OP_GET_STATUS: {
-            bool status = ksu_uid_scanner_enabled;
-            if (copy_to_user((void __user *)cmd.status_ptr, &status, sizeof(status))) {
-                pr_err("enable_uid_scanner: copy status failed\n");
+    case UID_SCANNER_OP_GET_STATUS: {
+        bool status = ksu_uid_scanner_enabled;
+        if (copy_to_user((void __user *)cmd.status_ptr, &status,
+                         sizeof(status))) {
+            pr_err("enable_uid_scanner: copy status failed\n");
+            return -EFAULT;
+        }
+        break;
+    }
+    case UID_SCANNER_OP_TOGGLE: {
+        bool enabled = cmd.enabled;
+
+        if (enabled == ksu_uid_scanner_enabled) {
+            pr_info("enable_uid_scanner: no need to change, already %s\n",
+                    enabled ? "enabled" : "disabled");
+            break;
+        }
+
+        if (enabled) {
+            // Enable UID scanner
+            int ret = ksu_throne_comm_init();
+            if (ret != 0) {
+                pr_err("enable_uid_scanner: failed to initialize: %d\n", ret);
                 return -EFAULT;
             }
-            break;
-        }
-        case UID_SCANNER_OP_TOGGLE: {
-            bool enabled = cmd.enabled;
-
-            if (enabled == ksu_uid_scanner_enabled) {
-                pr_info("enable_uid_scanner: no need to change, already %s\n",
-                    enabled ? "enabled" : "disabled");
-                break;
-            }
-
-            if (enabled) {
-                // Enable UID scanner
-                int ret = ksu_throne_comm_init();
-                if (ret != 0) {
-                    pr_err("enable_uid_scanner: failed to initialize: %d\n", ret);
-                    return -EFAULT;
-                }
-                pr_info("enable_uid_scanner: enabled\n");
-            } else {
-                // Disable UID scanner
-                ksu_throne_comm_exit();
-                pr_info("enable_uid_scanner: disabled\n");
-            }
-
-            ksu_uid_scanner_enabled = enabled;
-            ksu_throne_comm_save_state();
-            break;
-        }
-        case UID_SCANNER_OP_CLEAR_ENV: {
-            // Clear environment (force exit)
+            pr_info("enable_uid_scanner: enabled\n");
+        } else {
+            // Disable UID scanner
             ksu_throne_comm_exit();
-            ksu_uid_scanner_enabled = false;
-            ksu_throne_comm_save_state();
-            pr_info("enable_uid_scanner: environment cleared\n");
-            break;
+            pr_info("enable_uid_scanner: disabled\n");
         }
-        default:
-            pr_err("enable_uid_scanner: invalid operation\n");
-            return -EINVAL;
+
+        ksu_uid_scanner_enabled = enabled;
+        ksu_throne_comm_save_state();
+        break;
+    }
+    case UID_SCANNER_OP_CLEAR_ENV: {
+        // Clear environment (force exit)
+        ksu_throne_comm_exit();
+        ksu_uid_scanner_enabled = false;
+        ksu_throne_comm_save_state();
+        pr_info("enable_uid_scanner: environment cleared\n");
+        break;
+    }
+    default:
+        pr_err("enable_uid_scanner: invalid operation\n");
+        return -EINVAL;
     }
 
     return 0;
@@ -839,8 +842,8 @@ static int do_manual_su(void __user *arg)
         return -EFAULT;
     }
 
-    pr_info("manual_su request, option=%d, uid=%d, pid=%d\n",
-            cmd.option, cmd.target_uid, cmd.target_pid);
+    pr_info("manual_su request, option=%d, uid=%d, pid=%d\n", cmd.option,
+            cmd.target_uid, cmd.target_pid);
 
     memset(&request, 0, sizeof(request));
     request.target_uid = cmd.target_uid;
@@ -848,13 +851,15 @@ static int do_manual_su(void __user *arg)
 
     if (cmd.option == MANUAL_SU_OP_GENERATE_TOKEN ||
         cmd.option == MANUAL_SU_OP_ESCALATE) {
-        memcpy(request.token_buffer, cmd.token_buffer, sizeof(request.token_buffer));
+        memcpy(request.token_buffer, cmd.token_buffer,
+               sizeof(request.token_buffer));
     }
 
     res = ksu_handle_manual_su_request(cmd.option, &request);
 
     if (cmd.option == MANUAL_SU_OP_GENERATE_TOKEN && res == 0) {
-        memcpy(cmd.token_buffer, request.token_buffer, sizeof(cmd.token_buffer));
+        memcpy(cmd.token_buffer, request.token_buffer,
+               sizeof(cmd.token_buffer));
         if (copy_to_user(arg, &cmd, sizeof(cmd))) {
             pr_err("manual_su: copy_to_user failed\n");
             return -EFAULT;
@@ -940,40 +945,40 @@ static const struct ksu_ioctl_cmd_map ksu_ioctl_handlers[] = {
       .handler = add_try_umount,
       .perm_check = manager_or_root },
     { .cmd = KSU_IOCTL_GET_FULL_VERSION,
-      .name = "GET_FULL_VERSION", 
+      .name = "GET_FULL_VERSION",
       .handler = do_get_full_version,
-      .perm_check = always_allow},
+      .perm_check = always_allow },
     { .cmd = KSU_IOCTL_HOOK_TYPE,
-      .name = "GET_HOOK_TYPE", 
-      .handler = do_get_hook_type, 
-      .perm_check = manager_or_root},
-    { .cmd = KSU_IOCTL_ENABLE_KPM, 
-      .name = "GET_ENABLE_KPM", 
-      .handler = do_enable_kpm, 
-      .perm_check = manager_or_root},
-    { .cmd = KSU_IOCTL_DYNAMIC_MANAGER, 
+      .name = "GET_HOOK_TYPE",
+      .handler = do_get_hook_type,
+      .perm_check = manager_or_root },
+    { .cmd = KSU_IOCTL_ENABLE_KPM,
+      .name = "GET_ENABLE_KPM",
+      .handler = do_enable_kpm,
+      .perm_check = manager_or_root },
+    { .cmd = KSU_IOCTL_DYNAMIC_MANAGER,
       .name = "SET_DYNAMIC_MANAGER",
       .handler = do_dynamic_manager,
-      .perm_check = manager_or_root},
+      .perm_check = manager_or_root },
     { .cmd = KSU_IOCTL_GET_MANAGERS,
       .name = "GET_MANAGERS",
       .handler = do_get_managers,
-      .perm_check = manager_or_root},
+      .perm_check = manager_or_root },
     { .cmd = KSU_IOCTL_ENABLE_UID_SCANNER,
       .name = "SET_ENABLE_UID_SCANNER",
       .handler = do_enable_uid_scanner,
-      .perm_check = manager_or_root},
+      .perm_check = manager_or_root },
 #ifdef CONFIG_KSU_MANUAL_SU
     { .cmd = KSU_IOCTL_MANUAL_SU,
       .name = "MANUAL_SU",
       .handler = do_manual_su,
-      .perm_check = system_uid_check},
+      .perm_check = system_uid_check },
 #endif
 #ifdef CONFIG_KPM
     { .cmd = KSU_IOCTL_KPM,
       .name = "KPM_OPERATION",
       .handler = do_kpm,
-      .perm_check = manager_or_root},
+      .perm_check = manager_or_root },
 #endif
     { .cmd = KSU_IOCTL_LIST_TRY_UMOUNT,
       .name = "LIST_TRY_UMOUNT",
@@ -1007,7 +1012,8 @@ static void ksu_install_fd_tw_func(struct callback_head *cb)
 }
 
 // downstream: make sure to pass arg as reference, this can allow us to extend things.
-int ksu_handle_sys_reboot(int magic1, int magic2, unsigned int cmd, void __user **arg)
+int ksu_handle_sys_reboot(int magic1, int magic2, unsigned int cmd,
+                          void __user **arg)
 {
     struct ksu_install_fd_tw *tw;
 
@@ -1015,7 +1021,8 @@ int ksu_handle_sys_reboot(int magic1, int magic2, unsigned int cmd, void __user 
         return 0;
 
 #ifdef CONFIG_KSU_DEBUG
-    pr_info("sys_reboot: intercepted call! magic: 0x%x id: %d\n", magic1, magic2);
+    pr_info("sys_reboot: intercepted call! magic: 0x%x id: %d\n", magic1,
+            magic2);
 #endif
 
     // Check if this is a request to install KSU fd
@@ -1079,11 +1086,13 @@ void ksu_supercalls_exit(void)
     unregister_kprobe(&reboot_kp);
 }
 
-static inline void ksu_ioctl_audit(unsigned int cmd, const char *cmd_name, uid_t uid, int ret)
+static inline void ksu_ioctl_audit(unsigned int cmd, const char *cmd_name,
+                                   uid_t uid, int ret)
 {
 #if __SULOG_GATE
-    const char *result = (ret == 0) ? "SUCCESS" :
-                         (ret == -EPERM) ? "DENIED" : "FAILED";
+    const char *result = (ret == 0)      ? "SUCCESS" :
+                         (ret == -EPERM) ? "DENIED" :
+                                           "FAILED";
     ksu_sulog_report_syscall(uid, NULL, cmd_name, result);
 #endif
 }
@@ -1112,8 +1121,8 @@ static long anon_ksu_ioctl(struct file *filp, unsigned int cmd,
             }
             // Execute handler
             int ret = ksu_ioctl_handlers[i].handler(argp);
-            ksu_ioctl_audit(cmd, ksu_ioctl_handlers[i].name,
-                            current_uid().val, ret);
+            ksu_ioctl_audit(cmd, ksu_ioctl_handlers[i].name, current_uid().val,
+                            ret);
             return ret;
         }
     }
@@ -1163,7 +1172,8 @@ int ksu_install_fd(void)
     fd_install(fd, filp);
 
 #if __SULOG_GATE
-    ksu_sulog_report_permission_check(current_uid().val, current->comm, fd >= 0);
+    ksu_sulog_report_permission_check(current_uid().val, current->comm,
+                                      fd >= 0);
 #endif
 
     pr_info("ksu fd installed: %d for pid %d\n", fd, current->pid);

@@ -324,25 +324,25 @@ static void ksu_sys_enter_handler(void *data, struct pt_regs *regs, long id)
                 } else {
                     ksu_handle_execve_sucompat(filename_user, NULL, NULL, NULL);
                 }
-				return;
-			}
-		}
+                return;
+            }
+        }
 
         // Handle setresuid
-		if (id == __NR_setresuid) {
-			uid_t ruid = (uid_t)PT_REGS_PARM1(regs);
-			uid_t euid = (uid_t)PT_REGS_PARM2(regs);
-			uid_t suid = (uid_t)PT_REGS_PARM3(regs);
-			ksu_handle_setresuid(ruid, euid, suid);
-			return;
-		}
+        if (id == __NR_setresuid) {
+            uid_t ruid = (uid_t)PT_REGS_PARM1(regs);
+            uid_t euid = (uid_t)PT_REGS_PARM2(regs);
+            uid_t suid = (uid_t)PT_REGS_PARM3(regs);
+            ksu_handle_setresuid(ruid, euid, suid);
+            return;
+        }
 
 #ifdef CONFIG_KSU_MANUAL_SU
-		// Handle task_alloc via clone/fork
-    	if (id == __NR_clone || id == __NR_clone3)
-        	return ksu_handle_task_alloc(regs);
+        // Handle task_alloc via clone/fork
+        if (id == __NR_clone || id == __NR_clone3)
+            return ksu_handle_task_alloc(regs);
 #endif
-	}
+    }
 }
 #endif
 
