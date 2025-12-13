@@ -15,7 +15,7 @@ extern bool ksu_uid_scanner_enabled;
 #define EVENT_MODULE_MOUNTED 3
 
 // SukiSU Ultra kernel su version full strings
-#ifndef KSU_VERSION_FULL 
+#ifndef KSU_VERSION_FULL
 #define KSU_VERSION_FULL "v3.x-00000000@unknown"
 #endif
 #define KSU_FULL_VERSION_STRING 255

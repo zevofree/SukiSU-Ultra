@@ -128,7 +128,8 @@ struct ksu_enable_kpm_cmd {
 };
 
 struct ksu_dynamic_manager_cmd {
-    struct dynamic_manager_user_config config; // Input/Output: dynamic manager config
+    struct dynamic_manager_user_config
+        config; // Input/Output: dynamic manager config
 };
 
 struct ksu_get_managers_cmd {
@@ -138,7 +139,8 @@ struct ksu_get_managers_cmd {
 struct ksu_enable_uid_scanner_cmd {
     __u32 operation; // Input: operation type (UID_SCANNER_OP_GET_STATUS, UID_SCANNER_OP_TOGGLE, UID_SCANNER_OP_CLEAR_ENV)
     __u32 enabled; // Input: enable or disable (for UID_SCANNER_OP_TOGGLE)
-    void __user *status_ptr; // Input: pointer to store status (for UID_SCANNER_OP_GET_STATUS)
+    void __user *
+        status_ptr; // Input: pointer to store status (for UID_SCANNER_OP_GET_STATUS)
 };
 
 #ifdef CONFIG_KSU_MANUAL_SU
