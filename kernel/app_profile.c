@@ -26,8 +26,7 @@
 static void setup_groups(struct root_profile *profile, struct cred *cred)
 {
     if (profile->groups_count > KSU_MAX_GROUPS) {
-        pr_warn("Failed to setgroups, too large group: %d!\n",
-            profile->uid);
+        pr_warn("Failed to setgroups, too large group: %d!\n", profile->uid);
         return;
     }
 
@@ -65,19 +64,19 @@ static void setup_groups(struct root_profile *profile, struct cred *cred)
 
 void disable_seccomp(void)
 {
-	assert_spin_locked(&current->sighand->siglock);
-	// disable seccomp
+    assert_spin_locked(&current->sighand->siglock);
+    // disable seccomp
 #if defined(CONFIG_GENERIC_ENTRY) &&                                           \
-	LINUX_VERSION_CODE >= KERNEL_VERSION(5, 11, 0)
-	clear_syscall_work(SECCOMP);
+    LINUX_VERSION_CODE >= KERNEL_VERSION(5, 11, 0)
+    clear_syscall_work(SECCOMP);
 #else
-	clear_thread_flag(TIF_SECCOMP);
+    clear_thread_flag(TIF_SECCOMP);
 #endif
 
 #ifdef CONFIG_SECCOMP
-	current->seccomp.mode = 0;
-	current->seccomp.filter = NULL;
-	atomic_set(&current->seccomp.filter_count, 0);
+    current->seccomp.mode = 0;
+    current->seccomp.filter = NULL;
+    atomic_set(&current->seccomp.filter_count, 0);
 #else
 #endif
 }
@@ -117,15 +116,13 @@ void escape_with_root_profile(void)
     cred->securebits = 0;
 
     BUILD_BUG_ON(sizeof(profile->capabilities.effective) !=
-             sizeof(kernel_cap_t));
+                 sizeof(kernel_cap_t));
 
     // setup capabilities
     // we need CAP_DAC_READ_SEARCH becuase `/data/adb/ksud` is not accessible for non root process
     // we add it here but don't add it to cap_inhertiable, it would be dropped automaticly after exec!
-    u64 cap_for_ksud =
-        profile->capabilities.effective | CAP_DAC_READ_SEARCH;
-    memcpy(&cred->cap_effective, &cap_for_ksud,
-           sizeof(cred->cap_effective));
+    u64 cap_for_ksud = profile->capabilities.effective | CAP_DAC_READ_SEARCH;
+    memcpy(&cred->cap_effective, &cap_for_ksud, sizeof(cred->cap_effective));
     memcpy(&cred->cap_permitted, &profile->capabilities.effective,
            sizeof(cred->cap_permitted));
     memcpy(&cred->cap_bset, &profile->capabilities.effective,
@@ -151,8 +148,9 @@ void escape_with_root_profile(void)
     }
 }
 
-void escape_to_root_for_init(void) {
-	setup_selinux(KERNEL_SU_CONTEXT);
+void escape_to_root_for_init(void)
+{
+    setup_selinux(KERNEL_SU_CONTEXT);
 }
 
 #ifdef CONFIG_KSU_MANUAL_SU
