@@ -193,7 +193,7 @@ pub fn version() -> Result<()> {
         return Ok(());
     }
 
-    print!("{}", buf.to_string_lossy());
+    print!("{}", buf.to_string_lossy().trim());
     Ok(())
 }
 
@@ -217,7 +217,7 @@ pub fn check_version() -> Result<String> {
         );
         return Ok(String::new());
     }
-    let ver = buf.to_string_lossy();
+    let ver = buf.to_string_lossy().trim();
     if ver.is_empty() {
         bail!("KPM: invalid version response: {ver}");
     }
