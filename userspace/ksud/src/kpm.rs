@@ -6,7 +6,6 @@ use std::{
 };
 
 use anyhow::{Result, bail};
-use rustix::path::Arg;
 
 use crate::ksucalls::ksuctl;
 
@@ -193,7 +192,10 @@ pub fn version() -> Result<()> {
         return Ok(());
     }
 
-    print!("{}", buf2str(&buf).trim());
+    let binding = buf2str(&buf);
+    let ver = binding.trim();
+
+    print!("{ver}");
     Ok(())
 }
 
@@ -218,7 +220,8 @@ pub fn check_version() -> Result<String> {
         return Ok(String::new());
     }
 
-    let ver = buf2str(&buf).trim();
+    let binding = buf2str(&buf);
+    let ver = binding.trim();
 
     if ver.is_empty() {
         bail!("KPM: invalid version response: {ver}");
