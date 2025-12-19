@@ -28,8 +28,6 @@ object Natives {
 
     const val MINIMAL_SUPPORTED_DYNAMIC_MANAGER = 13215
 
-    const val MINIMAL_SUPPORTED_UID_SCANNER = 13347
-
     const val MINIMAL_NEW_IOCTL_KERNEL = 13490
 
     const val ROOT_UID = 0
@@ -164,26 +162,6 @@ object Natives {
 
     // 模块签名验证
     external fun verifyModuleSignature(modulePath: String): Boolean
-
-    /**
-     * Check if UID scanner is currently enabled
-     * @return true if UID scanner is enabled, false otherwise
-     */
-    external fun isUidScannerEnabled(): Boolean
-
-    /**
-     * Enable or disable UID scanner
-     * @param enabled true to enable, false to disable
-     * @return true if operation was successful, false otherwise
-     */
-    external fun setUidScannerEnabled(enabled: Boolean): Boolean
-
-    /**
-     * Clear UID scanner environment (force exit)
-     * This will forcefully stop all UID scanner operations and clear the environment
-     * @return true if operation was successful, false otherwise
-     */
-    external fun clearUidScannerEnvironment(): Boolean
 
     external fun getUserName(uid: Int): String?
 

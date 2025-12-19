@@ -36,10 +36,6 @@ void get_full_version(char* buff);
 #define DYNAMIC_MANAGER_OP_GET 1
 #define DYNAMIC_MANAGER_OP_CLEAR 2
 
-#define UID_SCANNER_OP_GET_STATUS 0
-#define UID_SCANNER_OP_TOGGLE 1
-#define UID_SCANNER_OP_CLEAR_ENV 2
-
 struct dynamic_manager_user_config {
 	unsigned int operation;
 	unsigned int size;
@@ -120,13 +116,6 @@ bool clear_dynamic_manager();
 bool get_managers_list(struct manager_list_info* info);
 
 bool verify_module_signature(const char* input);
-
-bool is_uid_scanner_enabled();
-
-bool set_uid_scanner_enabled(bool enabled);
-
-bool clear_uid_scanner_environment();
-
 // Feature IDs
 enum ksu_feature_id {
     KSU_FEATURE_SU_COMPAT = 0,
@@ -235,12 +224,6 @@ struct ksu_get_managers_cmd {
 	struct manager_list_info manager_info; // Output: manager list information
 };
 
-struct ksu_enable_uid_scanner_cmd {
-    uint32_t operation; // Input: operation type (UID_SCANNER_OP_GET_STATUS, UID_SCANNER_OP_TOGGLE, UID_SCANNER_OP_CLEAR_ENV)
-    uint32_t enabled; // Input: enable or disable (for UID_SCANNER_OP_TOGGLE)
-    uint64_t status_ptr; // Input: pointer to store status (for UID_SCANNER_OP_GET_STATUS)
-};
-
 // IOCTL command definitions
 #define KSU_IOCTL_GRANT_ROOT _IOC(_IOC_NONE, 'K', 1, 0)
 #define KSU_IOCTL_GET_INFO _IOC(_IOC_READ, 'K', 2, 0)
@@ -263,7 +246,6 @@ struct ksu_enable_uid_scanner_cmd {
 #define KSU_IOCTL_ENABLE_KPM _IOC(_IOC_READ, 'K', 102, 0)
 #define KSU_IOCTL_DYNAMIC_MANAGER _IOC(_IOC_READ|_IOC_WRITE, 'K', 103, 0)
 #define KSU_IOCTL_GET_MANAGERS _IOC(_IOC_READ|_IOC_WRITE, 'K', 104, 0)
-#define KSU_IOCTL_ENABLE_UID_SCANNER _IOC(_IOC_READ|_IOC_WRITE, 'K', 105, 0)
 
 bool get_allow_list(struct ksu_get_allow_list_cmd *);
 
@@ -289,8 +271,5 @@ bool legacy_set_dynamic_manager(unsigned int size, const char* hash);
 bool legacy_get_dynamic_manager(struct dynamic_manager_user_config* config);
 bool legacy_clear_dynamic_manager();
 bool legacy_get_managers_list(struct manager_list_info* info);
-bool legacy_is_uid_scanner_enabled();
-bool legacy_set_uid_scanner_enabled(bool enabled);
-bool legacy_clear_uid_scanner_environment();
 
 #endif //KERNELSU_KSU_H

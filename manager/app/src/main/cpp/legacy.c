@@ -40,7 +40,6 @@
 #define CMD_HOOK_TYPE 101
 #define CMD_DYNAMIC_MANAGER 103
 #define CMD_GET_MANAGERS 104
-#define CMD_ENABLE_UID_SCANNER 105
 
 static bool ksuctl(int cmd, void* arg1, void* arg2) {
     int32_t result = 0;
@@ -146,18 +145,4 @@ bool legacy_get_managers_list(struct manager_list_info* info) {
         return false;
     }
     return ksuctl(CMD_GET_MANAGERS, info, NULL);
-}
-
-bool legacy_is_uid_scanner_enabled() {
-    bool status = false;
-    ksuctl(CMD_ENABLE_UID_SCANNER, (void*)0, &status);
-    return status;
-}
-
-bool legacy_set_uid_scanner_enabled(bool enabled) {
-    return ksuctl(CMD_ENABLE_UID_SCANNER, (void*)1, (void*)enabled);
-}
-
-bool legacy_clear_uid_scanner_environment() {
-    return ksuctl(CMD_ENABLE_UID_SCANNER, (void*)2, NULL);
 }

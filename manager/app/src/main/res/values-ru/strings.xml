@@ -620,17 +620,6 @@
     <!-- KPM option radio group strings -->
     <string name="kpm_follow_kernel_file">Следовать за ядром</string>
     <string name="kpm_follow_kernel_description">Использовать ядро без каких-либо изменений KPM</string>
-    <!-- UID Scanner Settings -->
-    <string name="uid_auto_scan_title">Пользовательский режим сканирования списка приложений</string>
-    <string name="uid_auto_scan_summary">Включение этой опции позволит использовать сканирование пользовательского режима для списка приложений, улучшая стабильность. (Если вы столкнетесь с такими проблемами, как замораживание во время сканирования ядра списка приложений, вы можете включить эту опцию.)</string>
-    <string name="uid_multi_user_scan_title">Поиск многопользовательских приложений</string>
-    <string name="uid_multi_user_scan_summary">Когда включено, сканирует приложения для всех пользователей, включая рабочие профили</string>
-    <string name="uid_scanner_setting_failed">Не удалось установить, проверьте права доступа</string>
-    <string name="clean_runtime_environment">Очистить среду Runtime</string>
-    <string name="clean_runtime_environment_summary">Очистить среду Runtime и остановить службу сканирования</string>
-    <string name="clean_runtime_environment_confirm">Вы уверены, что хотите очистить среду Runtime? Это остановит службу сканирования и удалит связанные с ней файлы.</string>
-    <string name="clean_runtime_environment_success">Runtime окружение успешно очищено</string>
-    <string name="clean_runtime_environment_failed">Не удалось очистить среду runtime</string>
     <!-- 确认安装相关字符串 -->
     <string name="confirm_installation">Подтвердите установку</string>
     <string name="confirm_multiple_installation">Подтвердите установку (%d файлов)</string>

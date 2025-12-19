@@ -136,13 +136,6 @@ struct ksu_get_managers_cmd {
     struct manager_list_info manager_info; // Output: manager list information
 };
 
-struct ksu_enable_uid_scanner_cmd {
-    __u32 operation; // Input: operation type (UID_SCANNER_OP_GET_STATUS, UID_SCANNER_OP_TOGGLE, UID_SCANNER_OP_CLEAR_ENV)
-    __u32 enabled; // Input: enable or disable (for UID_SCANNER_OP_TOGGLE)
-    void __user *
-        status_ptr; // Input: pointer to store status (for UID_SCANNER_OP_GET_STATUS)
-};
-
 #ifdef CONFIG_KSU_MANUAL_SU
 struct ksu_manual_su_cmd {
     __u32 option; // Input: operation type (MANUAL_SU_OP_GENERATE_TOKEN, MANUAL_SU_OP_ESCALATE, MANUAL_SU_OP_ADD_PENDING)
@@ -177,7 +170,6 @@ struct ksu_manual_su_cmd {
 #define KSU_IOCTL_ENABLE_KPM _IOC(_IOC_READ, 'K', 102, 0)
 #define KSU_IOCTL_DYNAMIC_MANAGER _IOC(_IOC_READ | _IOC_WRITE, 'K', 103, 0)
 #define KSU_IOCTL_GET_MANAGERS _IOC(_IOC_READ | _IOC_WRITE, 'K', 104, 0)
-#define KSU_IOCTL_ENABLE_UID_SCANNER _IOC(_IOC_READ | _IOC_WRITE, 'K', 105, 0)
 #ifdef CONFIG_KSU_MANUAL_SU
 #define KSU_IOCTL_MANUAL_SU _IOC(_IOC_READ | _IOC_WRITE, 'K', 106, 0)
 #endif

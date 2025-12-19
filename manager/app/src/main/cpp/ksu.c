@@ -319,35 +319,6 @@ bool get_managers_list(struct manager_list_info *info)
 	return true;
 }
 
-bool is_uid_scanner_enabled(void)
-{
-	bool status = false;
-
-	struct ksu_enable_uid_scanner_cmd cmd = {
-			.operation  = UID_SCANNER_OP_GET_STATUS,
-			.status_ptr = (__u64)(uintptr_t)&status
-	};
-
-	return ksuctl(KSU_IOCTL_ENABLE_UID_SCANNER, &cmd) == 0 != 0 && status;
-}
-
-bool set_uid_scanner_enabled(bool enabled)
-{
-	struct ksu_enable_uid_scanner_cmd cmd = {
-			.operation = UID_SCANNER_OP_TOGGLE,
-			.enabled   = enabled
-	};
-	return ksuctl(KSU_IOCTL_ENABLE_UID_SCANNER, &cmd);
-}
-
-bool clear_uid_scanner_environment(void)
-{
-	struct ksu_enable_uid_scanner_cmd cmd = {
-			.operation = UID_SCANNER_OP_CLEAR_ENV
-	};
-	return ksuctl(KSU_IOCTL_ENABLE_UID_SCANNER, &cmd);
-}
-
 bool verify_module_signature(const char* input) {
 #if defined(__aarch64__) || defined(_M_ARM64) || defined(__arm__) || defined(_M_ARM)
 	if (input == NULL) {

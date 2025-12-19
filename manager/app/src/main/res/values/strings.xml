@@ -634,17 +634,6 @@ Important Note:\n
     <!-- KPM option radio group strings -->
     <string name="kpm_follow_kernel_file">Follow Kernel</string>
     <string name="kpm_follow_kernel_description">Use kernel as-is without any KPM modifications</string>
-    <!-- UID Scanner Settings -->
-    <string name="uid_auto_scan_title">User-mode scanning application list</string>
-    <string name="uid_auto_scan_summary">Enabling this option will use user-mode scanning for the application list, improving stability. (if you encounter issues such as freezing during kernel scanning of the application list, you may try enabling this option)</string>
-    <string name="uid_multi_user_scan_title">Multi-User Application Scanning</string>
-    <string name="uid_multi_user_scan_summary">When enabled, scans applications for all users, including work profiles</string>
-    <string name="uid_scanner_setting_failed">Setting failed, please check permissions</string>
-    <string name="clean_runtime_environment">Clean Runtime Environment</string>
-    <string name="clean_runtime_environment_summary">Clean up runtime files and stop the scanner service</string>
-    <string name="clean_runtime_environment_confirm">Are you sure you want to clean the runtime environment? This will stop the scanner service and remove related files</string>
-    <string name="clean_runtime_environment_success">Runtime environment cleaned successfully</string>
-    <string name="clean_runtime_environment_failed">Failed to clean runtime environment</string>
     <!-- 确认安装相关字符串 -->
     <string name="confirm_installation">Confirm Installation</string>
     <string name="confirm_multiple_installation">Confirm Installation (%d files)</string>
