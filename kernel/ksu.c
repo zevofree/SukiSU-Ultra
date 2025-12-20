@@ -17,7 +17,6 @@
 struct cred *ksu_cred;
 
 #include "sulog.h"
-#include "dynamic_manager.h"
 
 void sukisu_custom_config_init(void)
 {
@@ -25,7 +24,6 @@ void sukisu_custom_config_init(void)
 
 void sukisu_custom_config_exit(void)
 {
-    ksu_dynamic_manager_exit();
 #if __SULOG_GATE
     ksu_sulog_exit();
 #endif

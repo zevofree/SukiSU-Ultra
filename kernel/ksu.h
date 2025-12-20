@@ -18,24 +18,6 @@
 #endif
 #define KSU_FULL_VERSION_STRING 255
 
-#define DYNAMIC_MANAGER_OP_SET 0
-#define DYNAMIC_MANAGER_OP_GET 1
-#define DYNAMIC_MANAGER_OP_CLEAR 2
-
-struct dynamic_manager_user_config {
-    unsigned int operation;
-    unsigned int size;
-    char hash[65];
-};
-
-struct manager_list_info {
-    int count;
-    struct {
-        uid_t uid;
-        int signature_index;
-    } managers[2];
-};
-
 #if 0
 static inline int startswith(char *s, char *prefix)
 {
