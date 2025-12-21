@@ -95,7 +95,7 @@ enum ksu_feature_id {
     KSU_FEATURE_SU_COMPAT = 0,
     KSU_FEATURE_KERNEL_UMOUNT = 1,
     KSU_FEATURE_ENHANCED_SECURITY = 2,
-	KSU_FEATURE_SULOG = 3,
+	KSU_FEATURE_SULOG = 100,
 };
 
 // Generic feature API
@@ -210,6 +210,7 @@ struct ksu_enable_kpm_cmd {
 #define KSU_IOCTL_GET_FULL_VERSION _IOC(_IOC_READ, 'K', 100, 0)
 #define KSU_IOCTL_HOOK_TYPE _IOC(_IOC_READ, 'K', 101, 0)
 #define KSU_IOCTL_ENABLE_KPM _IOC(_IOC_READ, 'K', 102, 0)
+#define KSU_IOCTL_MANUAL_SU _IOC(_IOC_READ | _IOC_WRITE, 'K', 106, 0)
 
 bool get_allow_list(struct ksu_get_allow_list_cmd *);
 
