@@ -212,41 +212,42 @@ static int __manual_su_handle_devpts(struct inode *inode)
 
 static void disable_seccomp_for_task(struct task_struct *tsk)
 {
-    struct task_struct fake;
-    unsigned long flags;
-    // Refer to kernel/seccomp.c: seccomp_set_mode_strict
-    // When disabling Seccomp, ensure that tsk->sighand->siglock is held during the operation.
-    spin_lock_irqsave(&tsk->sighand->siglock, flags);
-#ifdef CONFIG_SECCOMP
-    if (tsk->seccomp.mode == SECCOMP_MODE_DISABLED && !tsk->seccomp.filter) {
-        spin_unlock_irqrestore(&tsk->sighand->siglock, flags);
+    struct task_struct *fake;
+
+    fake = kmalloc(sizeof(*fake), GFP_ATOMIC);
+    if (!fake) {
+        pr_warn("failed to alloc fake task_struct\n");
         return;
     }
-#endif
+
+    // Refer to kernel/seccomp.c: seccomp_set_mode_strict
+    // When disabling Seccomp, ensure that tsk->sighand->siglock is held during the operation.
+    spin_lock_irq(&tsk->sighand->siglock);
     // disable seccomp
 #if defined(CONFIG_GENERIC_ENTRY) &&                                           \
     LINUX_VERSION_CODE >= KERNEL_VERSION(5, 11, 0)
-    // clear_syscall_work is only for current, use clear_tsk_thread_flag for other tasks
+    // clear_syscall_work is only for tsk, use clear_tsk_thread_flag for other tasks
     clear_tsk_thread_flag(tsk, TIF_SECCOMP);
 #else
     clear_tsk_thread_flag(tsk, TIF_SECCOMP);
 #endif
 
-    memcpy(&fake, tsk, sizeof(fake));
+    memcpy(fake, tsk, sizeof(*fake));
     tsk->seccomp.mode = SECCOMP_MODE_DISABLED;
     tsk->seccomp.filter = NULL;
     atomic_set(&tsk->seccomp.filter_count, 0);
-    spin_unlock_irqrestore(&tsk->sighand->siglock, flags);
+    spin_unlock_irq(&tsk->sighand->siglock);
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 11, 0)
     // https://github.com/torvalds/linux/commit/bfafe5efa9754ebc991750da0bcca2a6694f3ed3#diff-45eb79a57536d8eccfc1436932f093eb5c0b60d9361c39edb46581ad313e8987R576-R577
-    fake.flags |= PF_EXITING;
+    fake->flags |= PF_EXITING;
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(5, 11, 0)
     // https://github.com/torvalds/linux/commit/0d8315dddd2899f519fe1ca3d4d5cdaf44ea421e#diff-45eb79a57536d8eccfc1436932f093eb5c0b60d9361c39edb46581ad313e8987R556-R558
-    fake.sighand = NULL;
+    fake->sighand = NULL;
 #endif
 
-    seccomp_filter_release(&fake);
+    seccomp_filter_release(fake);
+    kfree(fake);
 }
 
 void escape_to_root_for_cmd_su(uid_t target_uid, pid_t target_pid)
